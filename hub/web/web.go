@@ -31,6 +31,7 @@ func allCSS(c common.Context) {
 	c.Resp.Header().Set("Content-Type", "text/css; charset=UTF-8")
 	renderText(c, cssTemplates, "bootstrap.min.css")
 	renderText(c, cssTemplates, "bootstrap-theme.min.css")
+	renderText(c, cssTemplates, "bootstrap-multiselect.css")
 	renderText(c, cssTemplates, "common.css")
 }
 
@@ -72,6 +73,7 @@ func allJS(c common.Context) {
 	renderText(c, jsTemplates, "underscore-min.js")
 	renderText(c, jsTemplates, "backbone-min.js")
 	renderText(c, jsTemplates, "bootstrap.min.js")
+	renderText(c, jsTemplates, "bootstrap-multiselect.js")
 	renderText(c, jsTemplates, "viz.js")
 	render_Templates(c)
 	for _, templ := range jsModelTemplates.Templates() {
@@ -134,6 +136,10 @@ func getAIs(c common.Context) {
 	c.RenderJSON(models.GetAllAIs(c))
 }
 
+func getGames(c common.Context) {
+	c.RenderJSON(models.GetAllGames(c))
+}
+
 func createAI(c common.Context) {
 	if c.Authenticated() {
 		var ai models.AI
@@ -174,6 +180,9 @@ func init() {
 	router.Path("/user").MatcherFunc(wantsJSON).HandlerFunc(handler(getUser))
 	router.Path("/login").MatcherFunc(wantsHTML).HandlerFunc(handler(login))
 	router.Path("/logout").MatcherFunc(wantsHTML).HandlerFunc(handler(logout))
+
+	gamesRouter := router.PathPrefix("/games").MatcherFunc(wantsJSON).Subrouter()
+	gamesRouter.Methods("GET").HandlerFunc(handler(getGames))
 
 	aisRouter := router.PathPrefix("/ais").MatcherFunc(wantsJSON).Subrouter()
 

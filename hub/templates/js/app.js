@@ -22,6 +22,11 @@ $(window).load(function() {
 		routes: {
 			"": "about",
 			"ais": "ais",
+			"games": "games",
+		},
+
+		games: function() {
+		  this.render(new GamesView({}));
 		},
 
 		ais: function() {
