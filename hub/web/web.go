@@ -140,13 +140,25 @@ func getGames(c common.Context) {
 	c.RenderJSON(models.GetAllGames(c))
 }
 
+func createGame(c common.Context) {
+	if c.Authenticated() {
+		var game models.Game
+		common.MustDecodeJSON(c.Req.Body, &game)
+		if len(game.Players) > 0 {
+			c.RenderJSON(game.Save(c))
+		}
+	}
+}
+
 func createAI(c common.Context) {
 	if c.Authenticated() {
 		var ai models.AI
 		common.MustDecodeJSON(c.Req.Body, &ai)
-		ai.Owner = c.User.Email
-		ai.Id = nil
-		c.RenderJSON(ai.Save(c))
+		if ai.Name != "" && ai.URL != "" {
+			ai.Owner = c.User.Email
+			ai.Id = nil
+			c.RenderJSON(ai.Save(c))
+		}
 	}
 }
 
@@ -183,6 +195,7 @@ func init() {
 
 	gamesRouter := router.PathPrefix("/games").MatcherFunc(wantsJSON).Subrouter()
 	gamesRouter.Methods("GET").HandlerFunc(handler(getGames))
+	gamesRouter.Methods("POST").HandlerFunc(handler(createGame))
 
 	aisRouter := router.PathPrefix("/ais").MatcherFunc(wantsJSON).Subrouter()
 

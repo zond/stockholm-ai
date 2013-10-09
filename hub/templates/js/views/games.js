@@ -2,6 +2,10 @@ window.GamesView = Backbone.View.extend({
 	
 	template: _.template($('#games_underscore').html()),
 
+	events: {
+	  "click .create-button": 'createGame',
+	},
+
 	initialize: function() {
 	  this.collection = new Games();
 		this.listenTo(this.collection, 'reset', this.render);
@@ -15,11 +19,23 @@ window.GamesView = Backbone.View.extend({
 		this.ais.fetch({ reset: true });
 	},
 
+	createGame: function(ev) {
+		var that = this;
+	  ev.preventDefault();
+		that.collection.create({
+		  Players: that.$('select').val(),
+			State: 'Created',
+			PlayerNames: _.collect(that.$('select').val(), function(id) {
+			  return that.ais.get(id).get('Name')
+			}),
+		});
+	},
+
   render: function() {
 		var that = this;
     that.$el.html(that.template({}));
 		that.collection.each(function(game) {
-			that.$('table').append('<tr><td>' + game.get('Players') + '</td></tr>');
+			that.$('table').append('<tr><td>' + game.get('PlayerNames') + '</td><td>' + game.get('State') + '</td></tr>');
 		});
 		that.ais.each(function(ai) {
       that.$('select').append('<option value="' + ai.get('Id') + '">' + ai.get('Name') + '</option>');
