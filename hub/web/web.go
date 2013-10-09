@@ -7,6 +7,7 @@ import (
 	"common"
 	"fmt"
 	"github.com/gorilla/mux"
+	"models"
 	"net/http"
 	"regexp"
 	"strings"
@@ -129,6 +130,20 @@ func logout(c common.Context) {
 	c.Resp.WriteHeader(302)
 }
 
+func getAIs(c common.Context) {
+	c.RenderJSON(models.GetAllAIs(c))
+}
+
+func createAI(c common.Context) {
+	if c.Authenticated() {
+		var ai models.AI
+		common.MustDecodeJSON(c.Req.Body, &ai)
+		ai.Owner = c.User.Email
+		ai.Id = nil
+		c.RenderJSON(ai.Save(c))
+	}
+}
+
 func handler(f func(c common.Context)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c := common.Context{
@@ -146,9 +161,15 @@ func init() {
 	router := mux.NewRouter()
 	router.Path("/js/{ver}/all.js").HandlerFunc(handler(allJS))
 	router.Path("/css/{ver}/all.css").HandlerFunc(handler(allCSS))
-	router.Path("/user").HandlerFunc(handler(getUser))
+
+	router.Path("/user").MatcherFunc(wantsJSON).HandlerFunc(handler(getUser))
 	router.Path("/login").MatcherFunc(wantsHTML).HandlerFunc(handler(login))
 	router.Path("/logout").MatcherFunc(wantsHTML).HandlerFunc(handler(logout))
+
+	aisRouter := router.PathPrefix("/ais").MatcherFunc(wantsJSON).Subrouter()
+	aisRouter.Methods("GET").HandlerFunc(handler(getAIs))
+	aisRouter.Methods("POST").HandlerFunc(handler(createAI))
+
 	router.PathPrefix("/").MatcherFunc(wantsHTML).HandlerFunc(handler(index))
 	http.Handle("/", router)
 }

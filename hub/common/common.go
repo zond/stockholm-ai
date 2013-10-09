@@ -2,8 +2,11 @@ package common
 
 import (
 	"appengine"
+	"appengine/datastore"
 	"appengine/user"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -20,9 +23,24 @@ type Context struct {
 	User    *user.User
 }
 
+func (self Context) Authenticated() bool {
+	if self.User != nil {
+		return true
+	}
+	fmt.Fprintln(self.Resp, "Unauthorized")
+	self.Resp.WriteHeader(401)
+	return false
+}
+
 func (self Context) RenderJSON(i interface{}) {
 	self.Resp.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	if err := json.NewEncoder(self.Resp).Encode(i); err != nil {
+		panic(err)
+	}
+}
+
+func MustDecodeJSON(r io.Reader, result interface{}) {
+	if err := json.NewDecoder(r).Decode(result); err != nil {
 		panic(err)
 	}
 }
@@ -52,4 +70,27 @@ func MostAccepted(r *http.Request, def, name string) string {
 		}
 	}
 	return bestValue
+}
+
+func AssertOkError(err error) {
+	if !IsOkError(err) {
+		panic(err)
+	}
+}
+
+func IsOkError(err error) bool {
+	if err != nil {
+		if merr, ok := err.(appengine.MultiError); ok {
+			for _, serr := range merr {
+				if serr != nil {
+					if _, ok := serr.(*datastore.ErrFieldMismatch); !ok {
+						return false
+					}
+				}
+			}
+		} else if _, ok := err.(*datastore.ErrFieldMismatch); !ok {
+			return false
+		}
+	}
+	return true
 }
