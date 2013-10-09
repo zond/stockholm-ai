@@ -4,16 +4,50 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"appengine/user"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 var prefPattern = regexp.MustCompile("^([^\\s;]+)(;q=([\\d.]+))?$")
+
+func Norm(avg, dev, min, max int) (result int) {
+	result = int(rand.NormFloat64()*float64(dev) + float64(avg))
+	if result < min {
+		result = min
+	}
+	if result > max {
+		result = max
+	}
+	return
+}
+
+func Prettify(obj interface{}) string {
+	b, err := json.MarshalIndent(obj, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
+func RandomString(n int) string {
+	b := make([]byte, 0, n)
+	for i := 0; i < n; i++ {
+		b = append(b, byte(rand.Int()))
+	}
+	return base64.URLEncoding.EncodeToString(b)
+}
 
 type Context struct {
 	appengine.Context
@@ -60,6 +94,21 @@ func MustDecodeKey(s string) (result *datastore.Key) {
 		panic(err)
 	}
 	return
+}
+
+func MustMarshalJSON(i interface{}) (b []byte) {
+	var err error
+	if b, err = json.Marshal(i); err != nil {
+		panic(err)
+	}
+	return
+}
+
+func MustUnmarshalJSON(b []byte, i interface{}) {
+	var err error
+	if err = json.Unmarshal(b, i); err != nil {
+		panic(err)
+	}
 }
 
 func MostAccepted(r *http.Request, def, name string) string {

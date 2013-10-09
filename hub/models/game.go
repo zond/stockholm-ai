@@ -10,12 +10,12 @@ const (
 	AllGamesKey = "Games{All}"
 )
 
-type State string
+type GameState string
 
 const (
-	StateCreated  = "Created"
-	StatePlaying  = "Playing"
-	StateFinished = "Finished"
+	StateCreated  GameState = "Created"
+	StatePlaying  GameState = "Playing"
+	StateFinished GameState = "Finished"
 )
 
 type Games []Game
@@ -30,12 +30,14 @@ func (self Games) process(c common.Context) Games {
 type Game struct {
 	Id          *datastore.Key
 	Players     []*datastore.Key
-	State       State
+	State       GameState
 	PlayerNames []string `datastore:"-"`
+	Turns       Turns    `datastore:"-"`
 }
 
 func (self *Game) process(c common.Context) *Game {
 	self.PlayerNames = make([]string, len(self.Players))
+	self.Turns = GetTurnsByParent(c, self.Id)
 	for index, id := range self.Players {
 		if ai := GetAIById(c, id); ai != nil {
 			self.PlayerNames[index] = ai.Name
@@ -70,10 +72,18 @@ func (self *Game) Save(c common.Context) *Game {
 	if self.Id == nil {
 		self.State = StateCreated
 		self.Id, err = datastore.Put(c, datastore.NewKey(c, GameKind, "", 0, nil), self)
+		playerIds := make([]PlayerId, 0, len(self.Players))
+		for _, id := range self.Players {
+			playerIds = append(playerIds, PlayerId(id.Encode()))
+		}
+		turn := &Turn{
+			State: RandomState(c, playerIds),
+		}
+		turn.Save(c, self.Id)
 	} else {
 		_, err = datastore.Put(c, self.Id, self)
 	}
 	common.AssertOkError(err)
 	common.MemDel(c, AllGamesKey)
-	return self
+	return self.process(c)
 }
