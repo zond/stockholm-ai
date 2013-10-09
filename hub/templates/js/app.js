@@ -1,3 +1,29 @@
+
+function uniqueColors(numColors) {
+  if (numColors == 1) {
+	  return ["#ff0000"];
+	}
+	var result = [];
+	var sat = 0.8;
+	for (var i = 0; i < numColors; i++) {
+	  var hue = 360.0 * i / numColors;
+		if (i % 2 == 0) {
+		  result.push(tinycolor({
+			  h: hue,
+				s: sat,
+				v: 0.9,
+			}).toHexString());			
+		} else {
+		  result.push(tinycolor({
+			  h: hue,
+				s: sat,
+				v: 0.7,
+			}).toHexString());
+		}
+	}
+	return result;
+}
+
 window.session = {};
 
 $(window).load(function() {

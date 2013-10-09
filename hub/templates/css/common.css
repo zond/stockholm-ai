@@ -1,3 +1,7 @@
+.player-name {
+	font-size: x-large;
+	font-weight: bold;
+}
 .add-ai input {
 	width: 20em;
 }

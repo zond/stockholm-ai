@@ -75,6 +75,7 @@ func allJS(c common.Context) {
 	renderText(c, jsTemplates, "bootstrap.min.js")
 	renderText(c, jsTemplates, "bootstrap-multiselect.js")
 	renderText(c, jsTemplates, "viz.js")
+	renderText(c, jsTemplates, "tinycolor.js")
 	render_Templates(c)
 	for _, templ := range jsModelTemplates.Templates() {
 		if err := templ.Execute(c.Resp, c); err != nil {
