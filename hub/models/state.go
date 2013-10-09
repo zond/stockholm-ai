@@ -84,19 +84,18 @@ func (self *Node) connectNode(node *Node) {
 }
 
 func (self *Node) connect(c common.Context, allNodes []*Node, nodeMap map[NodeId]*Node) {
-	minEdges := common.Norm(3, 2, 1, len(allNodes)-1)
+	minEdges := common.Norm(4, 2, 2, len(allNodes)-1)
 	for len(self.Edges) < minEdges || !self.allReachable(c, nodeMap) {
 		perm := rand.Perm(len(allNodes))
 		var randomNode *Node
 		for _, index := range perm {
 			suggested := allNodes[index]
-			if _, found := self.Edges[suggested.Id]; !found {
-				randomNode = suggested
-				break
+			if suggested.Id != self.Id {
+				if _, found := self.Edges[suggested.Id]; !found {
+					randomNode = suggested
+					break
+				}
 			}
-		}
-		if randomNode == nil {
-			break
 		}
 		self.connectNode(randomNode)
 		minEdges--
