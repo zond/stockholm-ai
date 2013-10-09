@@ -20,7 +20,7 @@ window.AIsView = Backbone.View.extend({
 		this.collection.create({
 		  Name: $('.new-ai-name').val(),
 			URL: $('.new-ai-url').val(),
-			Owner: window.session.user.get('Email'),
+			IsOwner: true,
 		});
 	},
 
