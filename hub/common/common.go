@@ -21,6 +21,7 @@ type Context struct {
 	Resp    http.ResponseWriter
 	Version string
 	User    *user.User
+	Vars    map[string]string
 }
 
 func (self Context) Authenticated() bool {
@@ -48,6 +49,14 @@ func MustDecodeJSON(r io.Reader, result interface{}) {
 func MustParseFloat64(s string) (result float64) {
 	var err error
 	if result, err = strconv.ParseFloat(s, 64); err != nil {
+		panic(err)
+	}
+	return
+}
+
+func MustDecodeKey(s string) (result *datastore.Key) {
+	var err error
+	if result, err = datastore.DecodeKey(s); err != nil {
 		panic(err)
 	}
 	return

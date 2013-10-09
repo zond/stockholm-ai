@@ -144,12 +144,21 @@ func createAI(c common.Context) {
 	}
 }
 
+func deleteAI(c common.Context) {
+	if c.Authenticated() {
+		if ai := models.GetAIById(c, common.MustDecodeKey(c.Vars["ai_id"])); ai.Owner == c.User.Email {
+			ai.Delete(c)
+		}
+	}
+}
+
 func handler(f func(c common.Context)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c := common.Context{
 			Context: appengine.NewContext(r),
 			Req:     r,
 			Resp:    w,
+			Vars:    mux.Vars(r),
 		}
 		c.User = user.Current(c)
 		c.Version = appengine.VersionID(c.Context)
@@ -167,6 +176,10 @@ func init() {
 	router.Path("/logout").MatcherFunc(wantsHTML).HandlerFunc(handler(logout))
 
 	aisRouter := router.PathPrefix("/ais").MatcherFunc(wantsJSON).Subrouter()
+
+	aiRouter := aisRouter.PathPrefix("/{ai_id}").Subrouter()
+	aiRouter.Methods("DELETE").HandlerFunc(handler(deleteAI))
+
 	aisRouter.Methods("GET").HandlerFunc(handler(getAIs))
 	aisRouter.Methods("POST").HandlerFunc(handler(createAI))
 

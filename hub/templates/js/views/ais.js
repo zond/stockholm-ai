@@ -4,6 +4,7 @@ window.AIsView = Backbone.View.extend({
 
 	events: {
 	  'click .add-ai button': 'createNewAI',
+		'click .delete-button': 'deleteAI',
 	},
 
 	initialize: function() {
@@ -23,11 +24,21 @@ window.AIsView = Backbone.View.extend({
 		});
 	},
 
+	deleteAI: function(ev) {
+	  ev.preventDefault();
+	  var ai = this.collection.get($(ev.target).attr('data-id'));
+		ai.destroy();
+	},
+
   render: function() {
 		var that = this;
     that.$el.html(that.template({}));
 		that.collection.each(function(ai) {
-		  that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td>' + ai.get('Owner') + '</td></tr>');
+		  if (ai.get('IsOwner')) {
+				that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td><button data-id="' + ai.get('Id') + '" class="btn btn-xs delete-button">Delete</button></a></td></tr>');
+			} else {
+				that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td>' + ai.get('Owner') + '</td></tr>');
+			}
 		});
 		if (window.session.user.loggedIn()) {
 		  that.$('.add-ai').show();

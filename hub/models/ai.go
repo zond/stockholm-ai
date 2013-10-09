@@ -3,6 +3,7 @@ package models
 import (
 	"appengine/datastore"
 	"common"
+	"fmt"
 )
 
 const (
@@ -10,13 +11,53 @@ const (
 	AllAIsKey = "AIs{All}"
 )
 
+func AIByIdKey(k interface{}) string {
+	return fmt.Sprintf("AI{Id:%v}", k)
+}
+
 type AIs []AI
 
+func (self AIs) process(c common.Context) AIs {
+	for index, _ := range self {
+		(&self[index]).process(c)
+	}
+	return self
+}
+
 type AI struct {
-	Id    *datastore.Key
-	URL   string
-	Name  string
-	Owner string
+	Id      *datastore.Key
+	URL     string
+	Name    string
+	Owner   string `json:"-"`
+	IsOwner bool   `datastore:"-"`
+}
+
+func (self *AI) process(c common.Context) *AI {
+	if c.User != nil {
+		self.IsOwner = self.Owner == c.User.Email
+	}
+	return self
+}
+
+func findAIById(c common.Context, id *datastore.Key) *AI {
+	var ai AI
+	err := datastore.Get(c, id, &ai)
+	if err == datastore.ErrNoSuchEntity {
+		return nil
+	}
+	common.AssertOkError(err)
+	ai.Id = id
+	return &ai
+}
+
+func GetAIById(c common.Context, id *datastore.Key) *AI {
+	var ai AI
+	if common.Memoize(c, AIByIdKey(id), &ai, func() interface{} {
+		return findAIById(c, id)
+	}) {
+		return &ai
+	}
+	return nil
 }
 
 func findAllAIs(c common.Context) (result AIs) {
@@ -35,7 +76,12 @@ func GetAllAIs(c common.Context) (result AIs) {
 	common.Memoize(c, AllAIsKey, &result, func() interface{} {
 		return findAllAIs(c)
 	})
-	return
+	return result.process(c)
+}
+
+func (self *AI) Delete(c common.Context) {
+	datastore.Delete(c, self.Id)
+	common.MemDel(c, AllAIsKey, AIByIdKey(self.Id))
 }
 
 func (self *AI) Save(c common.Context) *AI {
@@ -46,6 +92,6 @@ func (self *AI) Save(c common.Context) *AI {
 		_, err = datastore.Put(c, self.Id, self)
 	}
 	common.AssertOkError(err)
-	common.MemDel(c, AllAIsKey)
+	common.MemDel(c, AllAIsKey, AIByIdKey(self.Id))
 	return self
 }
