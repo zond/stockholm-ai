@@ -2,6 +2,7 @@ package web
 
 import (
 	"appengine"
+	"appengine/user"
 	"bytes"
 	"common"
 	"fmt"
@@ -22,22 +23,23 @@ var _Templates = template.Must(template.New("_Templates").ParseGlob("templates/_
 var jsTemplates = template.Must(template.New("jsTemplates").ParseGlob("templates/js/*.js"))
 var cssTemplates = template.Must(template.New("cssTemplates").ParseGlob("templates/css/*.css"))
 
-func allCSS(c Context) {
+func allCSS(c common.Context) {
 	if !appengine.IsDevAppServer() {
 		c.Resp.Header().Set("Cache-Control", "public, max-age=864000")
 	}
 	c.Resp.Header().Set("Content-Type", "text/css; charset=UTF-8")
 	renderText(c, cssTemplates, "bootstrap.min.css")
 	renderText(c, cssTemplates, "bootstrap-theme.min.css")
+	renderText(c, cssTemplates, "common.css")
 }
 
-func renderText(c Context, templates *template.Template, template string) {
+func renderText(c common.Context, templates *template.Template, template string) {
 	if err := templates.ExecuteTemplate(c.Resp, template, c); err != nil {
 		panic(fmt.Errorf("While rendering text: %v", err))
 	}
 }
 
-func render_Templates(c Context) {
+func render_Templates(c common.Context) {
 	fmt.Fprintln(c.Resp, "(function() {")
 	fmt.Fprintln(c.Resp, "  var n;")
 	var buf *bytes.Buffer
@@ -60,7 +62,7 @@ func render_Templates(c Context) {
 	fmt.Fprintln(c.Resp, "})();")
 }
 
-func allJS(c Context) {
+func allJS(c common.Context) {
 	if !appengine.IsDevAppServer() {
 		c.Resp.Header().Set("Cache-Control", "public, max-age=864000")
 	}
@@ -97,7 +99,7 @@ func wantsHTML(r *http.Request, m *mux.RouteMatch) bool {
 	return common.MostAccepted(r, "text/html", "Accept") == "text/html"
 }
 
-func index(c Context) {
+func index(c common.Context) {
 	if !appengine.IsDevAppServer() {
 		c.Resp.Header().Set("Cache-Control", "public, max-age=864000")
 	}
@@ -105,20 +107,36 @@ func index(c Context) {
 	renderText(c, htmlTemplates, "index.html")
 }
 
-type Context struct {
-	appengine.Context
-	Req     *http.Request
-	Resp    http.ResponseWriter
-	Version string
+func getUser(c common.Context) {
+	c.RenderJSON(c.User)
 }
 
-func handler(f func(c Context)) http.HandlerFunc {
+func login(c common.Context) {
+	url, err := user.LoginURL(c.Context, c.Req.URL.Scheme+c.Req.URL.Host)
+	if err != nil {
+		panic(err)
+	}
+	c.Resp.Header().Set("Location", url)
+	c.Resp.WriteHeader(302)
+}
+
+func logout(c common.Context) {
+	url, err := user.LogoutURL(c.Context, c.Req.URL.Scheme+c.Req.URL.Host)
+	if err != nil {
+		panic(err)
+	}
+	c.Resp.Header().Set("Location", url)
+	c.Resp.WriteHeader(302)
+}
+
+func handler(f func(c common.Context)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c := Context{
+		c := common.Context{
 			Context: appengine.NewContext(r),
 			Req:     r,
 			Resp:    w,
 		}
+		c.User = user.Current(c)
 		c.Version = appengine.VersionID(c.Context)
 		f(c)
 	}
@@ -128,6 +146,9 @@ func init() {
 	router := mux.NewRouter()
 	router.Path("/js/{ver}/all.js").HandlerFunc(handler(allJS))
 	router.Path("/css/{ver}/all.css").HandlerFunc(handler(allCSS))
+	router.Path("/user").HandlerFunc(handler(getUser))
+	router.Path("/login").MatcherFunc(wantsHTML).HandlerFunc(handler(login))
+	router.Path("/logout").MatcherFunc(wantsHTML).HandlerFunc(handler(logout))
 	router.PathPrefix("/").MatcherFunc(wantsHTML).HandlerFunc(handler(index))
 	http.Handle("/", router)
 }

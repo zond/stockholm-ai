@@ -1,6 +1,9 @@
 package common
 
 import (
+	"appengine"
+	"appengine/user"
+	"encoding/json"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -8,6 +11,21 @@ import (
 )
 
 var prefPattern = regexp.MustCompile("^([^\\s;]+)(;q=([\\d.]+))?$")
+
+type Context struct {
+	appengine.Context
+	Req     *http.Request
+	Resp    http.ResponseWriter
+	Version string
+	User    *user.User
+}
+
+func (self Context) RenderJSON(i interface{}) {
+	self.Resp.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if err := json.NewEncoder(self.Resp).Encode(i); err != nil {
+		panic(err)
+	}
+}
 
 func MustParseFloat64(s string) (result float64) {
 	var err error
