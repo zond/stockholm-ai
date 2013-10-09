@@ -140,6 +140,10 @@ func getGames(c common.Context) {
 	c.RenderJSON(models.GetAllGames(c))
 }
 
+func getGame(c common.Context) {
+	c.RenderJSON(models.GetGameById(c, common.MustDecodeKey(c.Vars["game_id"])))
+}
+
 func createGame(c common.Context) {
 	if c.Authenticated() {
 		var game models.Game
@@ -194,6 +198,10 @@ func init() {
 	router.Path("/logout").MatcherFunc(wantsHTML).HandlerFunc(handler(logout))
 
 	gamesRouter := router.PathPrefix("/games").MatcherFunc(wantsJSON).Subrouter()
+
+	gameRouter := gamesRouter.PathPrefix("/{game_id}").Subrouter()
+	gameRouter.Methods("GET").HandlerFunc(handler(getGame))
+
 	gamesRouter.Methods("GET").HandlerFunc(handler(getGames))
 	gamesRouter.Methods("POST").HandlerFunc(handler(createGame))
 

@@ -23,6 +23,11 @@ $(window).load(function() {
 			"": "about",
 			"ais": "ais",
 			"games": "games",
+			"games/:id": "showGame",
+		},
+
+		showGame: function(id) {
+		  this.render(new GameView({ id: id }));
 		},
 
 		games: function() {

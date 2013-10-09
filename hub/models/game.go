@@ -3,12 +3,17 @@ package models
 import (
 	"appengine/datastore"
 	"common"
+	"fmt"
 )
 
 const (
 	GameKind    = "Game"
 	AllGamesKey = "Games{All}"
 )
+
+func gameKeyForId(k interface{}) string {
+	return fmt.Sprintf("Game{Id:%v}", k)
+}
 
 type GameState string
 
@@ -67,6 +72,27 @@ func GetAllGames(c common.Context) (result Games) {
 	return result.process(c)
 }
 
+func findGameById(c common.Context, id *datastore.Key) *Game {
+	var game Game
+	err := datastore.Get(c, id, &game)
+	if err == datastore.ErrNoSuchEntity {
+		return nil
+	}
+	common.AssertOkError(err)
+	game.Id = id
+	return &game
+}
+
+func GetGameById(c common.Context, id *datastore.Key) *Game {
+	var game Game
+	if common.Memoize(c, gameKeyForId(id), &game, func() interface{} {
+		return findGameById(c, id)
+	}) {
+		return (&game).process(c)
+	}
+	return nil
+}
+
 func (self *Game) Save(c common.Context) *Game {
 	var err error
 	if self.Id == nil {
@@ -84,6 +110,6 @@ func (self *Game) Save(c common.Context) *Game {
 		_, err = datastore.Put(c, self.Id, self)
 	}
 	common.AssertOkError(err)
-	common.MemDel(c, AllGamesKey)
+	common.MemDel(c, AllGamesKey, gameKeyForId(self.Id))
 	return self.process(c)
 }
