@@ -112,16 +112,22 @@ func GetGameById(c common.Context, id *datastore.Key) *Game {
 func (self *Game) Save(c common.Context) *Game {
 	var err error
 	if self.Id == nil {
-		self.State = StateCreated
-		self.Id, err = datastore.Put(c, datastore.NewKey(c, GameKind, "", 0, nil), self)
-		playerIds := make([]PlayerId, 0, len(self.Players))
-		for _, id := range self.Players {
-			playerIds = append(playerIds, PlayerId(id.Encode()))
-		}
-		turn := &Turn{
-			State: RandomState(c, playerIds),
-		}
-		turn.Save(c, self.Id)
+		err = common.Transaction(c, func(c common.Context) (err error) {
+			self.State = StateCreated
+			self.Id, err = datastore.Put(c, datastore.NewKey(c, GameKind, "", 0, nil), self)
+			if err != nil {
+				return
+			}
+			playerIds := make([]PlayerId, 0, len(self.Players))
+			for _, id := range self.Players {
+				playerIds = append(playerIds, PlayerId(id.Encode()))
+			}
+			turn := &Turn{
+				State: RandomState(c, playerIds),
+			}
+			turn.Save(c, self.Id)
+			return nil
+		})
 	} else {
 		_, err = datastore.Put(c, self.Id, self)
 	}

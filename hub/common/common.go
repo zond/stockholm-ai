@@ -33,6 +33,14 @@ func Norm(avg, dev, min, max int) (result int) {
 	return
 }
 
+func Transaction(outerContext Context, f func(Context) error) error {
+	return datastore.RunInTransaction(outerContext, func(innerContext appengine.Context) error {
+		cpy := outerContext
+		cpy.Context = innerContext
+		return f(cpy)
+	}, &datastore.TransactionOptions{})
+}
+
 func Prettify(obj interface{}) string {
 	b, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
