@@ -133,6 +133,27 @@ func (self *State) executeTransits() {
 }
 
 func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
+	execution := []func(){}
+	for playerId, orders := range orderMap {
+		for _, order := range orders {
+			if src, found := self.Nodes[order.Src]; found {
+				if src.Units[playerId] >= order.Units {
+					if edge, found := src.Edges[order.Dst]; found {
+						src.Units[playerId] -= order.Units
+						edgeCpy := edge
+						orderCpy := order
+						playerIdCpy := playerId
+						execution = append(execution, func() {
+							edgeCpy.Units[0][playerIdCpy] += orderCpy.Units
+						})
+					}
+				}
+			}
+		}
+	}
+	for _, exec := range execution {
+		exec()
+	}
 }
 
 func (self *State) executeGrowth(c common.Logger) {

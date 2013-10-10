@@ -17,19 +17,17 @@ type Randomizer struct{}
 func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, s state.State) (result state.Orders) {
 	for _, node := range s.Nodes {
 		if node.Units[me] > 0 {
-			breakpoints := make(sort.Float64Slice, 0, len(node.Edges)-1)
+			breakpoints := make(sort.Float64Slice, len(node.Edges))
 			for index, _ := range breakpoints {
 				breakpoints[index] = rand.Float64()
 			}
 			sort.Sort(breakpoints)
 			lastRate := 0.0
+			rate := 1.0
 			for _, edge := range node.Edges {
-				rate := 1.0
-				if len(breakpoints) > 0 {
-					rate = lastRate - breakpoints[0]
-					lastRate = rate
-					breakpoints = breakpoints[1:]
-				}
+				rate = breakpoints[0] - lastRate
+				lastRate = rate
+				breakpoints = breakpoints[1:]
 				units := common.Min(node.Units[me], int(float64(node.Units[me])*rate))
 				if units > 0 {
 					result = append(result, state.Order{
@@ -41,6 +39,5 @@ func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, s state.S
 			}
 		}
 	}
-	logger.Infof("returning %v", common.Prettify(result))
 	return
 }
