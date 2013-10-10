@@ -4,6 +4,8 @@ import (
 	"appengine/datastore"
 	"common"
 	"fmt"
+	"sort"
+	"time"
 )
 
 const (
@@ -25,6 +27,18 @@ const (
 
 type Games []Game
 
+func (self Games) Len() int {
+	return len(self)
+}
+
+func (self Games) Less(i, j int) bool {
+	return self[i].CreatedAt.Before(self[j].CreatedAt)
+}
+
+func (self Games) Swap(i, j int) {
+	self[j], self[i] = self[i], self[j]
+}
+
 func (self Games) process(c common.Context) Games {
 	for index, _ := range self {
 		(&self[index]).process(c)
@@ -38,6 +52,7 @@ type Game struct {
 	State       GameState
 	PlayerNames []string `datastore:"-"`
 	Turns       Turns    `datastore:"-"`
+	CreatedAt   time.Time
 }
 
 func (self *Game) process(c common.Context) *Game {
@@ -69,6 +84,7 @@ func GetAllGames(c common.Context) (result Games) {
 	common.Memoize(c, AllGamesKey, &result, func() interface{} {
 		return findAllGames(c)
 	})
+	sort.Sort(result)
 	return result.process(c)
 }
 

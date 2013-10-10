@@ -36,6 +36,9 @@ func (self *AI) process(c common.Context) *AI {
 	if c.User != nil {
 		self.IsOwner = self.Owner == c.User.Email
 	}
+	if !self.IsOwner {
+		self.URL = ""
+	}
 	return self
 }
 

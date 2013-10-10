@@ -128,5 +128,9 @@ func RandomState(c common.Context, players []PlayerId) (result State) {
 	for _, node := range allNodes {
 		node.connect(c, allNodes, result.Nodes)
 	}
+	perm := rand.Perm(len(allNodes))
+	for index, playerId := range players {
+		allNodes[perm[index]].Units[playerId] = 10
+	}
 	return
 }

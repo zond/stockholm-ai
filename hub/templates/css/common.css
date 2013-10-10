@@ -1,4 +1,7 @@
-.player-name {
+.players {
+	position: absolute;
+	z-index: 10;
+	float: left;
 	font-size: x-large;
 	font-weight: bold;
 }

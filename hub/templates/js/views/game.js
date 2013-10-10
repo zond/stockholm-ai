@@ -14,6 +14,28 @@ window.GameView = Backbone.View.extend({
 	  var that = this;
 	  var turn = that.model.get('Turns')[ordinal];
 		var state = turn.State;
+		var players = {};
+		var playerNames = that.model.get('PlayerNames');
+		var playerIds = that.model.get('Players');
+		var colors = uniqueColors(playerNames.length);
+		for (var i = 0; i < playerIds.length; i++) {
+		  players[playerIds[i]] = {
+				name: playerNames[i],
+				color: colors[i],
+			};
+		}
+		for (var nodeId in state.Nodes) {
+		  var node = state.Nodes[nodeId];
+		  var label = $('#' + selEscape(nodeId) + ' text');
+			label.empty();
+      for (var playerId in node.Units) {
+			  var tspan = document.createElementNS(SVG, 'tspan');
+				tspan.setAttribute('fill', players[playerId].color);
+				tspan.setAttribute('font-weight', 'bold');
+				tspan.textContent = '' + node.Units[playerId] + ' ';
+				label[0].appendChild(tspan);
+			}
+		}
 	},
 
   render: function() {
@@ -25,10 +47,8 @@ window.GameView = Backbone.View.extend({
 		if (playerNames != null) {
 		  var colors = uniqueColors(playerNames.length);
 			for (var i = 0; i < colors.length; i++) {
-			  that.$('.players').append('<span class="player-name" style="color: ' + colors[i] + ';">' + playerNames[i] + ' </span>');
+			  that.$('.players').append('<div style="color: ' + colors[i] + ';">' + playerNames[i] + ' </div>');
 			}
-		}
-		if (that.model.get('Turns') != null) {
 		  that.renderTurn(0);
 		}
 		return that;

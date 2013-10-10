@@ -42,7 +42,8 @@ window.Game = Backbone.Model.extend({
 				}
 			});
 			_.each(nodes, function(node) {
-				dot.push('node [id="' + node.Id + '",shape=doublecircle,width=1,height=1,label=""]; "' + node.Id + '";');
+			  var size = node.Size / 50.0;
+				dot.push('node [id="' + node.Id + '",shape=doublecircle,width="' + size + '",height="' + size + '",label=" "]; "' + node.Id + '";');
 			});
 			_.each(edges, function(edge) {
 				dot.push('"' + edge.Src + '" -> "' + edge.Dst + '" [dir=none,id="' + edge.Src + '_' + edge.Dst + '",len="' + edge.Units.length + '"]');

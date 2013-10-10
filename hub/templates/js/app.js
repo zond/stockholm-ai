@@ -1,4 +1,11 @@
 
+
+SVG = "http://www.w3.org/2000/svg";
+
+function selEscape(sel) {
+  return sel.replace(/\//g, "\\/").replace(/=/g, '\\=');
+}
+
 function uniqueColors(numColors) {
   if (numColors == 1) {
 	  return ["#ff0000"];

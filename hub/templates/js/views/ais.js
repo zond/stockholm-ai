@@ -9,6 +9,7 @@ window.AIsView = Backbone.View.extend({
 
 	initialize: function() {
 	  this.collection = new AIs();
+		this.listenTo(this.collection, 'sync', this.render);
 		this.listenTo(this.collection, 'reset', this.render);
 		this.listenTo(this.collection, 'add', this.render);
 		this.listenTo(this.collection, 'remove', this.render);
@@ -37,7 +38,7 @@ window.AIsView = Backbone.View.extend({
 		  if (ai.get('IsOwner')) {
 				that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td><button data-id="' + ai.get('Id') + '" class="btn btn-xs delete-button">Delete</button></a></td></tr>');
 			} else {
-				that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td>' + ai.get('Owner') + '</td></tr>');
+				that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td></td></tr>');
 			}
 		});
 		if (window.session.user.loggedIn()) {

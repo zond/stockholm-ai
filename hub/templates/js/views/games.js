@@ -9,6 +9,7 @@ window.GamesView = Backbone.View.extend({
 	initialize: function() {
 	  this.collection = new Games();
 		this.listenTo(this.collection, 'sync', this.render);
+		this.listenTo(this.collection, 'reset', this.render);
 		this.listenTo(this.collection, 'add', this.render);
 		this.listenTo(this.collection, 'remove', this.render);
 		this.collection.fetch({ reset: true });
