@@ -41,7 +41,7 @@ window.GameView = Backbone.View.extend({
   renderTurn: function(ordinal) {
 	  var that = this;
 		that.currentTurn = ordinal;
-		that.$('.current-turn').val('' + ordinal);
+		that.$('.current-turn').attr('value', '' + ordinal);
 		var turns = that.model.get('Turns');
 	  if (ordinal == 0) {
 		  that.$('.turn-back').attr('disabled', 'disabled'); 
