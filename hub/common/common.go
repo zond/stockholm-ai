@@ -38,7 +38,7 @@ func Transaction(outerContext Context, f func(Context) error) error {
 		cpy := outerContext
 		cpy.Context = innerContext
 		return f(cpy)
-	}, &datastore.TransactionOptions{})
+	}, &datastore.TransactionOptions{XG: true})
 }
 
 func Prettify(obj interface{}) string {
