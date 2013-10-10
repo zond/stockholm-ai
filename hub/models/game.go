@@ -69,6 +69,8 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	self := getGameById(c, id)
 	self.PlayerNames = playerNames
 	if CountTurnsByParent(c, self.Id) > maxGameDuration {
+		self.State = StateFinished
+		self.Save(c)
 		c.Infof("Ended %v due to timeout", self.Id)
 		return
 	}
