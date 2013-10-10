@@ -76,7 +76,7 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	}
 	if err := common.Transaction(c, func(c common.Context) (err error) {
 		lastTurn := GetLatestTurnByParent(c, self.Id)
-		newTurn := lastTurn.Next()
+		newTurn := lastTurn.Next(c, Orders{})
 		newTurn.Save(c, self.Id)
 		self.State = StatePlaying
 		self.Save(c)

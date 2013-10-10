@@ -4,6 +4,7 @@ import (
 	"appengine/datastore"
 	"common"
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -25,6 +26,18 @@ func latestTurnKeyForParent(k interface{}) string {
 
 type Turns []Turn
 
+func (self Turns) Len() int {
+	return len(self)
+}
+
+func (self Turns) Less(i, j int) bool {
+	return self[i].Ordinal < self[j].Ordinal
+}
+
+func (self Turns) Swap(i, j int) {
+	self[i], self[j] = self[j], self[i]
+}
+
 func (self Turns) process(c common.Context) Turns {
 	for index, _ := range self {
 		(&self[index]).process(c)
@@ -40,9 +53,11 @@ type Turn struct {
 	CreatedAt       time.Time
 }
 
-func (self *Turn) Next() *Turn {
+func (self *Turn) Next(c common.Context, orders Orders) *Turn {
 	cpy := *self
 	cpy.Id = nil
+	cpy.Ordinal += 1
+	(&cpy.State).Next(c, orders)
 	return &cpy
 }
 
@@ -69,6 +84,7 @@ func GetTurnsByParent(c common.Context, parent *datastore.Key) (result Turns) {
 	common.Memoize(c, turnsKeyForParent(parent), &result, func() interface{} {
 		return findTurnsByParent(c, parent)
 	})
+	sort.Sort(result)
 	return result.process(c)
 }
 

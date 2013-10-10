@@ -22,6 +22,26 @@ func init() {
 
 var prefPattern = regexp.MustCompile("^([^\\s;]+)(;q=([\\d.]+))?$")
 
+func Max(is ...int) (result int) {
+	result = is[0]
+	for _, i := range is[1:] {
+		if i > result {
+			result = i
+		}
+	}
+	return
+}
+
+func Min(is ...int) (result int) {
+	result = is[0]
+	for _, i := range is[1:] {
+		if i < result {
+			result = i
+		}
+	}
+	return
+}
+
 func Norm(avg, dev, min, max int) (result int) {
 	result = int(rand.NormFloat64()*float64(dev) + float64(avg))
 	if result < min {

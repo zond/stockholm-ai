@@ -5,6 +5,11 @@ import (
 	"math/rand"
 )
 
+const (
+	growthFactor     = 0.2
+	starvationFactor = 0.2
+)
+
 type NodeId string
 
 type PlayerId string
@@ -112,8 +117,46 @@ func RandomNode() (result *Node) {
 	return
 }
 
+type Order struct{}
+
+type Orders []Order
+
 type State struct {
 	Nodes map[NodeId]*Node
+}
+
+func (self *State) executeTransits() {
+}
+
+func (self *State) executeOrders(orders Orders) {
+}
+
+func (self *State) executeGrowth(c common.Context) {
+	for _, node := range self.Nodes {
+		if len(node.Units) == 1 {
+			players := make([]PlayerId, 0, len(node.Units))
+			for playerId, _ := range node.Units {
+				players = append(players, playerId)
+			}
+			playerId := players[0]
+			units := node.Units[playerId]
+			if units < node.Size {
+				node.Units[playerId] = common.Min(node.Size, int(1+float64(units)*(1.0+(growthFactor*(float64(node.Size-units)/float64(node.Size))))))
+			} else if units > node.Size {
+				node.Units[playerId] = common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size))))-1))
+			}
+		}
+	}
+}
+
+func (self *State) executeConflicts() {
+}
+
+func (self *State) Next(c common.Context, orders Orders) {
+	self.executeTransits()
+	self.executeOrders(orders)
+	self.executeGrowth(c)
+	self.executeConflicts()
 }
 
 func RandomState(c common.Context, players []PlayerId) (result State) {
