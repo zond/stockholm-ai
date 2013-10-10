@@ -2,17 +2,62 @@ window.GameView = Backbone.View.extend({
 	
 	template: _.template($('#game_underscore').html()),
 
+	events: {
+	  'click .turn-forward-all': 'lastTurn',
+	  'click .turn-back-all': 'firstTurn',
+	  'click .turn-forward': 'nextTurn',
+	  'click .turn-back': 'prevTurn',
+	},
+
 	initialize: function(options) {
 	  this.model = new Game({}, {
 		  url: '/games/' + options.id,
 		});
 		this.listenTo(this.model, 'change', this.render);
 		this.model.fetch();
+		this.currenTurn = 0;
+	},
+
+	firstTurn: function(ev) {
+		ev.preventDefault();
+		this.renderTurn(0);
+	},
+
+	lastTurn: function(ev) {
+		ev.preventDefault();
+		this.renderTurn(this.model.get('Turns').length - 1);
+	},
+
+	prevTurn: function(ev) {
+		ev.preventDefault();
+		this.renderTurn(this.currentTurn - 1);
+	},
+
+	nextTurn: function(ev) {
+		ev.preventDefault();
+		this.renderTurn(this.currentTurn + 1);
 	},
 
   renderTurn: function(ordinal) {
 	  var that = this;
-	  var turn = that.model.get('Turns')[ordinal];
+		that.currentTurn = ordinal;
+		that.$('.current-turn').val('' + ordinal);
+		var turns = that.model.get('Turns');
+	  if (ordinal == 0) {
+		  that.$('.turn-back').attr('disabled', 'disabled'); 
+		  that.$('.turn-back-all').attr('disabled', 'disabled'); 
+		} else {
+		  that.$('.turn-back').removeAttr('disabled');
+		  that.$('.turn-back-all').removeAttr('disabled');
+		}
+		if (ordinal < turns.length - 1) {
+		  that.$('.turn-forward').removeAttr('disabled');
+		  that.$('.turn-forward-all').removeAttr('disabled');
+		} else {
+		  that.$('.turn-forward').attr('disabled', 'disabled'); 
+		  that.$('.turn-forward-all').attr('disabled', 'disabled'); 
+		}
+	  var turn = turns[ordinal];
 		var state = turn.State;
 		var players = {};
 		var playerNames = that.model.get('PlayerNames');
@@ -49,7 +94,7 @@ window.GameView = Backbone.View.extend({
 			for (var i = 0; i < colors.length; i++) {
 			  that.$('.players').append('<div style="color: ' + colors[i] + ';">' + playerNames[i] + ' </div>');
 			}
-		  that.renderTurn(0);
+		  that.renderTurn(that.currenTurn);
 		}
 		return that;
 	},

@@ -1,2 +1,26 @@
 <div class="players"></div>
+<div class="game-controls">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label class="sr-only" for="curren-turn">Current turn</label>
+			<input type="text" class="form-control current-turn" id="current-turn" value="" disabled="disabled">
+		</div>
+		<div class="form-group">
+			<label class="sr-only" for="turn-back-all">Fast back</label>
+			<button type="button" class="form-control btn btn-xs turn-back-all" disabled="disabled" id="turn-back-all"><span class="glyphicon glyphicon-fast-backward"></span></button>
+		</div>
+		<div class="form-group">
+			<label class="sr-only" for="turn-back">Back</label>
+			<button type="button" class="form-control btn btn-xs turn-back" disabled="disabled" id="turn-back"><span class="glyphicon glyphicon-step-backward"></span></button>
+		</div>
+		<div class="form-group">
+			<label class="sr-only" for="turn-forward">Forward</label>
+			<button type="button" class="form-control btn btn-xs turn-forward" disabled="disabled" id="turn-forward"><span class="glyphicon glyphicon-step-forward"></span></button>
+		</div>
+		<div class="form-group">
+			<label class="sr-only" for="turn-forward-all">Fast forward</label>
+			<button type="button" class="form-control btn btn-xs turn-forward-all" disabled="disabled" id="turn-forward-all"><span class="glyphicon glyphicon-fast-forward"></span></button>
+		</div>
+	</form>
+</div>
 <%= model.svg() %>

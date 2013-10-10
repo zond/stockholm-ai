@@ -7,8 +7,11 @@ import (
 	"common"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io"
 	"models"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -189,6 +192,48 @@ func handler(f func(c common.Context)) http.HandlerFunc {
 	}
 }
 
+func handleStatic(router *mux.Router, dir string) {
+	static, err := os.Open(dir)
+	if err != nil {
+		panic(err)
+	}
+	children, err := static.Readdirnames(-1)
+	if err != nil {
+		panic(err)
+	}
+	for _, fil := range children {
+		cpy := fil
+		router.MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+			return strings.HasSuffix(r.URL.Path, cpy)
+		}).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", "public, max-age=864000")
+			if strings.HasSuffix(r.URL.Path, ".css") {
+				w.Header().Set("Content-Type", "text/css; charset=UTF-8")
+			} else if strings.HasSuffix(r.URL.Path, ".js") {
+				w.Header().Set("Content-Type", "application/javascript; charset=UTF-8")
+			} else if strings.HasSuffix(r.URL.Path, ".png") {
+				w.Header().Set("Content-Type", "image/png")
+			} else if strings.HasSuffix(r.URL.Path, ".gif") {
+				w.Header().Set("Content-Type", "image/gif")
+			} else if strings.HasSuffix(r.URL.Path, ".woff") {
+				w.Header().Set("Content-Type", "application/font-woff")
+			} else if strings.HasSuffix(r.URL.Path, ".ttf") {
+				w.Header().Set("Content-Type", "font/truetype")
+			} else {
+				w.Header().Set("Content-Type", "application/octet-stream")
+			}
+			if in, err := os.Open(filepath.Join("static", cpy)); err != nil {
+				w.WriteHeader(500)
+			} else {
+				defer in.Close()
+				if _, err := io.Copy(w, in); err != nil {
+					w.WriteHeader(500)
+				}
+			}
+		})
+	}
+}
+
 func init() {
 	router := mux.NewRouter()
 	router.Path("/js/{ver}/all.js").HandlerFunc(handler(allJS))
@@ -213,6 +258,8 @@ func init() {
 
 	aisRouter.Methods("GET").HandlerFunc(handler(getAIs))
 	aisRouter.Methods("POST").HandlerFunc(handler(createAI))
+
+	handleStatic(router, "static")
 
 	router.PathPrefix("/").MatcherFunc(wantsHTML).HandlerFunc(handler(index))
 	http.Handle("/", router)

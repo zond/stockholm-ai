@@ -161,7 +161,7 @@ func (self *State) Next(c common.Context, orders Orders) {
 
 func RandomState(c common.Context, players []PlayerId) (result State) {
 	result.Nodes = map[NodeId]*Node{}
-	size := common.Norm(len(players)*5, len(players), len(players)*2, len(players)*10)
+	size := common.Norm(len(players)*6, len(players), len(players)*4, len(players)*10)
 	allNodes := make([]*Node, 0, size)
 	for i := 0; i < size; i++ {
 		node := RandomNode()

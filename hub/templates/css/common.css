@@ -1,3 +1,14 @@
+.game-controls {
+	z-index: 10;
+	float: right;
+}
+.current-turn {
+	width: 4em;
+}
+.game-controls span {
+	font-size: x-large;
+	font-weight: bold;
+}
 .players {
 	position: absolute;
 	z-index: 10;
