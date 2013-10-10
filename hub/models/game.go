@@ -4,8 +4,12 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"appengine/delay"
+	"appengine/urlfetch"
+	"bytes"
 	"common"
 	"fmt"
+	ai "github.com/zond/stockholm-ai/ai"
+	aiCommon "github.com/zond/stockholm-ai/common"
 	state "github.com/zond/stockholm-ai/state"
 	"sort"
 	"time"
@@ -65,6 +69,11 @@ type Game struct {
 	CreatedAt   time.Time
 }
 
+type orderResponse struct {
+	PlayerId state.PlayerId
+	Orders   state.Orders
+}
+
 func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	c := common.Context{Context: cont}
 	self := getGameById(c, id)
@@ -77,7 +86,37 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	}
 	if err := common.Transaction(c, func(c common.Context) (err error) {
 		lastTurn := GetLatestTurnByParent(c, self.Id)
-		newTurn := lastTurn.Next(c, state.Orders{})
+		responses := make(chan orderResponse, len(self.Players))
+		for _, playerId := range self.Players {
+			orderResp := orderResponse{
+				PlayerId: state.PlayerId(playerId.Encode()),
+			}
+			if foundAi := GetAIById(c, playerId); foundAi != nil {
+				go func() {
+					defer func() {
+						responses <- orderResp
+					}()
+					req := ai.OrderRequest{
+						Me:    orderResp.PlayerId,
+						State: lastTurn.State,
+					}
+					buf := &bytes.Buffer{}
+					aiCommon.MustEncodeJSON(buf, req)
+					client := urlfetch.Client(c)
+					if resp, err := client.Post(foundAi.URL, "application/json; charset=UTF-8", buf); err == nil && resp.StatusCode == 200 {
+						aiCommon.MustDecodeJSON(resp.Body, &orderResp.Orders)
+					}
+				}()
+			} else {
+				responses <- orderResp
+			}
+		}
+		orderMap := map[state.PlayerId]state.Orders{}
+		for i := 0; i < len(self.Players); i++ {
+			orderResp := <-responses
+			orderMap[orderResp.PlayerId] = orderResp.Orders
+		}
+		newTurn := lastTurn.Next(c, orderMap)
 		newTurn.Save(c, self.Id)
 		self.State = StatePlaying
 		self.Save(c)

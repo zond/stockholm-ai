@@ -16,25 +16,31 @@ type Randomizer struct{}
 
 func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, s state.State) (result state.Orders) {
 	for _, node := range s.Nodes {
-		breakpoints := make(sort.Float64Slice, 0, len(node.Edges)-1)
-		for index, _ := range breakpoints {
-			breakpoints[index] = rand.Float64()
-		}
-		sort.Sort(breakpoints)
-		lastRate := 0.0
-		for _, edge := range node.Edges {
-			rate := 1.0
-			if len(breakpoints) > 0 {
-				rate = lastRate - breakpoints[0]
-				lastRate = rate
-				breakpoints = breakpoints[1:]
+		if node.Units[me] > 0 {
+			breakpoints := make(sort.Float64Slice, 0, len(node.Edges)-1)
+			for index, _ := range breakpoints {
+				breakpoints[index] = rand.Float64()
 			}
-			result = append(result, state.Order{
-				Src:   edge.Src,
-				Dst:   edge.Dst,
-				Units: common.Min(node.Units[me], int(float64(node.Units[me])*rate)),
-			})
+			sort.Sort(breakpoints)
+			lastRate := 0.0
+			for _, edge := range node.Edges {
+				rate := 1.0
+				if len(breakpoints) > 0 {
+					rate = lastRate - breakpoints[0]
+					lastRate = rate
+					breakpoints = breakpoints[1:]
+				}
+				units := common.Min(node.Units[me], int(float64(node.Units[me])*rate))
+				if units > 0 {
+					result = append(result, state.Order{
+						Src:   edge.Src,
+						Dst:   edge.Dst,
+						Units: units,
+					})
+				}
+			}
 		}
 	}
+	logger.Infof("returning %v", common.Prettify(result))
 	return
 }

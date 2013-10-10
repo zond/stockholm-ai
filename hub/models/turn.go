@@ -55,11 +55,11 @@ type Turn struct {
 	CreatedAt       time.Time
 }
 
-func (self *Turn) Next(c common.Context, orders state.Orders) *Turn {
+func (self *Turn) Next(c common.Context, orderMap map[state.PlayerId]state.Orders) *Turn {
 	cpy := *self
 	cpy.Id = nil
 	cpy.Ordinal += 1
-	(&cpy.State).Next(c, orders)
+	(&cpy.State).Next(c, orderMap)
 	return &cpy
 }
 

@@ -132,7 +132,7 @@ type State struct {
 func (self *State) executeTransits() {
 }
 
-func (self *State) executeOrders(orders Orders) {
+func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
 }
 
 func (self *State) executeGrowth(c common.Logger) {
@@ -156,9 +156,9 @@ func (self *State) executeGrowth(c common.Logger) {
 func (self *State) executeConflicts() {
 }
 
-func (self *State) Next(c common.Logger, orders Orders) {
+func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) {
 	self.executeTransits()
-	self.executeOrders(orders)
+	self.executeOrders(orderMap)
 	self.executeGrowth(c)
 	self.executeConflicts()
 }
