@@ -69,6 +69,8 @@ window.GameView = Backbone.View.extend({
 				color: colors[i],
 			};
 		}
+		var edgeLabels = $('#edgeLabels');
+		edgeLabels.empty();
 		for (var nodeId in state.Nodes) {
 		  var node = state.Nodes[nodeId];
 		  var label = $('#' + selEscape(nodeId) + ' text');
@@ -80,7 +82,44 @@ window.GameView = Backbone.View.extend({
 				tspan.textContent = '' + node.Units[playerId] + ' ';
 				label[0].appendChild(tspan);
 			}
+			for (var dstId in node.Edges) {
+			  var edge = node.Edges[dstId];
+				var spots = edge.Units.length;
+				for (var i = 0; i < spots; i++) {
+				  var spot = edge.Units[i];
+					var text = document.createElementNS(SVG, 'text');
+					var textPath = document.createElementNS(SVG, 'textPath');
+					text.appendChild(textPath);
+					textPath.setAttribute('xlink:href', '#' + edge.Src + '_' + edge.Dst + '_edge');
+					textPath.setAttribute('startOffset', '' + (((i + 1) / (spots + 1)) * 100) + '%');
+					var found = 0;
+					for (var playerId in spot) {
+					  found += 1;
+					  var tspan = document.createElementNS(SVG, 'tspan');
+						tspan.setAttribute('fill', players[playerId].color);
+						tspan.setAttribute('font-weight', 'bold');
+						tspan.textContent = '' + spot[playerId] + ' ';
+						textPath.appendChild(tspan);
+						console.log('found units');
+					}
+					if (found > 0) {
+						edgeLabels[0].appendChild(text);
+					}
+				}
+			}
 		}
+		var parentNode = that.$('svg').parent()[0];
+		parentNode.innerHTML = parentNode.innerHTML;
+	},
+
+	prepareMap: function() {
+	  var g = $('svg #graph0')[0];
+		var edgeLabels = document.createElementNS(SVG, 'g');
+		edgeLabels.setAttribute('id', 'edgeLabels');
+		g.appendChild(edgeLabels);
+	  $('g.edge path').each(function(i, path) {
+		  path.setAttribute('id', $(path).closest('g.edge').attr('id') + '_edge');
+		})
 	},
 
   render: function() {
@@ -90,6 +129,7 @@ window.GameView = Backbone.View.extend({
 		}));
 		var playerNames = that.model.get('PlayerNames');
 		if (playerNames != null) {
+			that.prepareMap();
 		  var colors = uniqueColors(playerNames.length);
 			for (var i = 0; i < colors.length; i++) {
 			  that.$('.players').append('<div style="color: ' + colors[i] + ';">' + playerNames[i] + ' </div>');
