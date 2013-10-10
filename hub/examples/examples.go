@@ -14,7 +14,7 @@ func init() {
 
 type Randomizer struct{}
 
-func (self Randomizer) Orders(me state.PlayerId, s state.State) (result state.Orders) {
+func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, s state.State) (result state.Orders) {
 	for _, node := range s.Nodes {
 		breakpoints := make(sort.Float64Slice, 0, len(node.Edges)-1)
 		for index, _ := range breakpoints {
