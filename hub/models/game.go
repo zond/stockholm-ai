@@ -1,7 +1,9 @@
 package models
 
 import (
+	"appengine"
 	"appengine/datastore"
+	"appengine/delay"
 	"common"
 	"fmt"
 	"sort"
@@ -9,9 +11,16 @@ import (
 )
 
 const (
-	GameKind    = "Game"
-	AllGamesKey = "Games{All}"
+	GameKind        = "Game"
+	AllGamesKey     = "Games{All}"
+	maxGameDuration = 100
 )
+
+var nextTurnFunc *delay.Function
+
+func init() {
+	nextTurnFunc = delay.Func("models/game.nextTurnFunc", nextTurn)
+}
 
 func gameKeyForId(k interface{}) string {
 	return fmt.Sprintf("Game{Id:%v}", k)
@@ -55,9 +64,29 @@ type Game struct {
 	CreatedAt   time.Time
 }
 
-func (self *Game) process(c common.Context) *Game {
+func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
+	c := common.Context{Context: cont}
+	self := getGameById(c, id)
+	self.PlayerNames = playerNames
+	if CountTurnsByParent(c, self.Id) > maxGameDuration {
+		c.Infof("Ended %v due to timeout", self.Id)
+		return
+	}
+	if err := common.Transaction(c, func(c common.Context) (err error) {
+		lastTurn := GetLatestTurnByParent(c, self.Id)
+		newTurn := lastTurn.Next()
+		newTurn.Save(c, self.Id)
+		self.State = StatePlaying
+		self.Save(c)
+		nextTurnFunc.Call(c, self.Id, playerNames)
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+}
+
+func (self *Game) setPlayerNames(c common.Context) {
 	self.PlayerNames = make([]string, len(self.Players))
-	self.Turns = GetTurnsByParent(c, self.Id)
 	for index, id := range self.Players {
 		if ai := GetAIById(c, id); ai != nil {
 			self.PlayerNames[index] = ai.Name
@@ -65,6 +94,11 @@ func (self *Game) process(c common.Context) *Game {
 			self.PlayerNames[index] = "[redacted]"
 		}
 	}
+}
+
+func (self *Game) process(c common.Context) *Game {
+	self.Turns = GetTurnsByParent(c, self.Id)
+	self.setPlayerNames(c)
 	return self
 }
 
@@ -99,20 +133,29 @@ func findGameById(c common.Context, id *datastore.Key) *Game {
 	return &game
 }
 
-func GetGameById(c common.Context, id *datastore.Key) *Game {
+func getGameById(c common.Context, id *datastore.Key) *Game {
 	var game Game
 	if common.Memoize(c, gameKeyForId(id), &game, func() interface{} {
 		return findGameById(c, id)
 	}) {
-		return (&game).process(c)
+		return &game
 	}
 	return nil
+}
+
+func GetGameById(c common.Context, id *datastore.Key) (result *Game) {
+	result = getGameById(c, id)
+	if result != nil {
+		result.process(c)
+	}
+	return
 }
 
 func (self *Game) Save(c common.Context) *Game {
 	var err error
 	if self.Id == nil {
 		err = common.Transaction(c, func(c common.Context) (err error) {
+			self.CreatedAt = time.Now()
 			self.State = StateCreated
 			self.Id, err = datastore.Put(c, datastore.NewKey(c, GameKind, "", 0, nil), self)
 			if err != nil {
@@ -126,6 +169,9 @@ func (self *Game) Save(c common.Context) *Game {
 				State: RandomState(c, playerIds),
 			}
 			turn.Save(c, self.Id)
+			self.Turns = Turns{*turn}
+			self.setPlayerNames(c)
+			nextTurnFunc.Call(c, self.Id, self.PlayerNames)
 			return nil
 		})
 	} else {
