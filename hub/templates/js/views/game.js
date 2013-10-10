@@ -94,13 +94,14 @@ window.GameView = Backbone.View.extend({
 					textPath.setAttribute('startOffset', '' + (((i + 1) / (spots + 1)) * 100) + '%');
 					var found = 0;
 					for (var playerId in spot) {
-					  found += 1;
-					  var tspan = document.createElementNS(SVG, 'tspan');
-						tspan.setAttribute('fill', players[playerId].color);
-						tspan.setAttribute('font-weight', 'bold');
-						tspan.textContent = '' + spot[playerId] + ' ';
-						textPath.appendChild(tspan);
-						console.log('found units');
+					  if (spot[playerId] > 0) {
+							found += 1;
+							var tspan = document.createElementNS(SVG, 'tspan');
+							tspan.setAttribute('fill', players[playerId].color);
+							tspan.setAttribute('font-weight', 'bold');
+							tspan.textContent = '' + spot[playerId] + ' ';
+							textPath.appendChild(tspan);
+						}
 					}
 					if (found > 0) {
 						edgeLabels[0].appendChild(text);

@@ -129,7 +129,33 @@ type State struct {
 	Nodes map[NodeId]*Node
 }
 
-func (self *State) executeTransits() {
+func (self *State) executeTransits(logger common.Logger) {
+	execution := []func(){}
+	for _, node := range self.Nodes {
+		for _, edge := range node.Edges {
+			for index, units := range edge.Units {
+				for playerId, num := range units {
+					numCpy := num
+					edgeCpy := edge
+					playerIdCpy := playerId
+					indexCpy := index
+					units[playerId] = 0
+					if index == len(edge.Units)-1 {
+						execution = append(execution, func() {
+							self.Nodes[edgeCpy.Dst].Units[playerIdCpy] += numCpy
+						})
+					} else {
+						execution = append(execution, func() {
+							edgeCpy.Units[indexCpy+1][playerIdCpy] += numCpy
+						})
+					}
+				}
+			}
+		}
+	}
+	for _, exec := range execution {
+		exec()
+	}
 }
 
 func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
@@ -178,7 +204,7 @@ func (self *State) executeConflicts() {
 }
 
 func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) {
-	self.executeTransits()
+	self.executeTransits(c)
 	self.executeOrders(orderMap)
 	self.executeGrowth(c)
 	self.executeConflicts()
