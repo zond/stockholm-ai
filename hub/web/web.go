@@ -5,8 +5,11 @@ import (
 	"appengine/user"
 	"bytes"
 	"common"
+	"examples"
 	"fmt"
 	"github.com/gorilla/mux"
+	ai "github.com/zond/stockholm-ai/ai"
+	aiCommon "github.com/zond/stockholm-ai/common"
 	"io"
 	"models"
 	"net/http"
@@ -151,7 +154,7 @@ func getGame(c common.Context) {
 func createGame(c common.Context) {
 	if c.Authenticated() {
 		var game models.Game
-		common.MustDecodeJSON(c.Req.Body, &game)
+		aiCommon.MustDecodeJSON(c.Req.Body, &game)
 		if len(game.Players) > 0 {
 			c.RenderJSON(game.Save(c))
 		}
@@ -161,7 +164,7 @@ func createGame(c common.Context) {
 func createAI(c common.Context) {
 	if c.Authenticated() {
 		var ai models.AI
-		common.MustDecodeJSON(c.Req.Body, &ai)
+		aiCommon.MustDecodeJSON(c.Req.Body, &ai)
 		if ai.Name != "" && ai.URL != "" {
 			ai.Owner = c.User.Email
 			ai.Id = nil
@@ -258,6 +261,8 @@ func init() {
 
 	aisRouter.Methods("GET").HandlerFunc(handler(getAIs))
 	aisRouter.Methods("POST").HandlerFunc(handler(createAI))
+
+	router.Path("/examples/randomizer").Methods("POST").Handler(ai.HTTPHandlerFunc(examples.Randomizer{}))
 
 	handleStatic(router, "static")
 

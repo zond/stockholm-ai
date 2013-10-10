@@ -1,7 +1,7 @@
 package models
 
 import (
-	"common"
+	common "github.com/zond/stockholm-ai/common"
 	"math/rand"
 )
 
@@ -33,7 +33,7 @@ type Node struct {
 	Edges map[NodeId]Edge
 }
 
-func (self *Node) reachable(c common.Context, node *Node, nodeMap map[NodeId]*Node) bool {
+func (self *Node) reachable(c common.Logger, node *Node, nodeMap map[NodeId]*Node) bool {
 	visited := map[NodeId]bool{}
 	queue := make([]NodeId, 0, len(self.Edges))
 	for nodeId, _ := range self.Edges {
@@ -61,7 +61,7 @@ func (self *Node) reachable(c common.Context, node *Node, nodeMap map[NodeId]*No
 	return false
 }
 
-func (self *Node) allReachable(c common.Context, nodeMap map[NodeId]*Node) bool {
+func (self *Node) allReachable(c common.Logger, nodeMap map[NodeId]*Node) bool {
 	for _, node := range nodeMap {
 		if !self.reachable(c, node, nodeMap) {
 			return false
@@ -88,7 +88,7 @@ func (self *Node) connectNode(node *Node) {
 	node.Edges[self.Id] = *here
 }
 
-func (self *Node) connect(c common.Context, allNodes []*Node, nodeMap map[NodeId]*Node) {
+func (self *Node) connect(c common.Logger, allNodes []*Node, nodeMap map[NodeId]*Node) {
 	minEdges := common.Norm(4, 2, 2, len(allNodes)-1)
 	for len(self.Edges) < minEdges || !self.allReachable(c, nodeMap) {
 		perm := rand.Perm(len(allNodes))
@@ -117,7 +117,11 @@ func RandomNode() (result *Node) {
 	return
 }
 
-type Order struct{}
+type Order struct {
+	Src   NodeId
+	Dst   NodeId
+	Units int
+}
 
 type Orders []Order
 
@@ -131,7 +135,7 @@ func (self *State) executeTransits() {
 func (self *State) executeOrders(orders Orders) {
 }
 
-func (self *State) executeGrowth(c common.Context) {
+func (self *State) executeGrowth(c common.Logger) {
 	for _, node := range self.Nodes {
 		if len(node.Units) == 1 {
 			players := make([]PlayerId, 0, len(node.Units))
@@ -152,14 +156,14 @@ func (self *State) executeGrowth(c common.Context) {
 func (self *State) executeConflicts() {
 }
 
-func (self *State) Next(c common.Context, orders Orders) {
+func (self *State) Next(c common.Logger, orders Orders) {
 	self.executeTransits()
 	self.executeOrders(orders)
 	self.executeGrowth(c)
 	self.executeConflicts()
 }
 
-func RandomState(c common.Context, players []PlayerId) (result State) {
+func RandomState(c common.Logger, players []PlayerId) (result State) {
 	result.Nodes = map[NodeId]*Node{}
 	size := common.Norm(len(players)*6, len(players), len(players)*4, len(players)*10)
 	allNodes := make([]*Node, 0, size)

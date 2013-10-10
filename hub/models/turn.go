@@ -4,6 +4,8 @@ import (
 	"appengine/datastore"
 	"common"
 	"fmt"
+	aiCommon "github.com/zond/stockholm-ai/common"
+	state "github.com/zond/stockholm-ai/state"
 	"sort"
 	"time"
 )
@@ -48,12 +50,12 @@ func (self Turns) process(c common.Context) Turns {
 type Turn struct {
 	Id              *datastore.Key
 	Ordinal         int
-	SerializedState []byte `json:"-"`
-	State           State  `datastore:"-"`
+	SerializedState []byte      `json:"-"`
+	State           state.State `datastore:"-"`
 	CreatedAt       time.Time
 }
 
-func (self *Turn) Next(c common.Context, orders Orders) *Turn {
+func (self *Turn) Next(c common.Context, orders state.Orders) *Turn {
 	cpy := *self
 	cpy.Id = nil
 	cpy.Ordinal += 1
@@ -63,7 +65,7 @@ func (self *Turn) Next(c common.Context, orders Orders) *Turn {
 
 func (self *Turn) process(c common.Context) *Turn {
 	if len(self.SerializedState) > 0 {
-		common.MustUnmarshalJSON(self.SerializedState, &self.State)
+		aiCommon.MustUnmarshalJSON(self.SerializedState, &self.State)
 	}
 	return self
 }
@@ -126,7 +128,7 @@ func CountTurnsByParent(c common.Context, parent *datastore.Key) (result int) {
 }
 
 func (self *Turn) Save(c common.Context, parent *datastore.Key) *Turn {
-	self.SerializedState = common.MustMarshalJSON(self.State)
+	self.SerializedState = aiCommon.MustMarshalJSON(self.State)
 	var err error
 	if self.Id == nil {
 		self.CreatedAt = time.Now()

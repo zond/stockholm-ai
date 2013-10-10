@@ -6,6 +6,7 @@ import (
 	"appengine/delay"
 	"common"
 	"fmt"
+	state "github.com/zond/stockholm-ai/state"
 	"sort"
 	"time"
 )
@@ -76,7 +77,7 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	}
 	if err := common.Transaction(c, func(c common.Context) (err error) {
 		lastTurn := GetLatestTurnByParent(c, self.Id)
-		newTurn := lastTurn.Next(c, Orders{})
+		newTurn := lastTurn.Next(c, state.Orders{})
 		newTurn.Save(c, self.Id)
 		self.State = StatePlaying
 		self.Save(c)
@@ -163,12 +164,12 @@ func (self *Game) Save(c common.Context) *Game {
 			if err != nil {
 				return
 			}
-			playerIds := make([]PlayerId, 0, len(self.Players))
+			playerIds := make([]state.PlayerId, 0, len(self.Players))
 			for _, id := range self.Players {
-				playerIds = append(playerIds, PlayerId(id.Encode()))
+				playerIds = append(playerIds, state.PlayerId(id.Encode()))
 			}
 			turn := &Turn{
-				State: RandomState(c, playerIds),
+				State: state.RandomState(c, playerIds),
 			}
 			turn.Save(c, self.Id)
 			self.Turns = Turns{*turn}
