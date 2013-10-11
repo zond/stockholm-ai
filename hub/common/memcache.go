@@ -7,9 +7,7 @@ import (
 	"code.google.com/p/snappy-go/snappy"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"github.com/ugorji/go/codec"
 	"io"
 	"math/rand"
 	"reflect"
@@ -20,38 +18,6 @@ const (
 	regularCache = iota
 	nilCache
 )
-
-var bincHandle = new(codec.BincHandle)
-
-var bincCodec = memcache.Codec{
-	Marshal: func(i interface{}) (b []byte, err error) {
-		err = codec.NewEncoderBytes(&b, bincHandle).Encode(i)
-		return
-	},
-	Unmarshal: func(b []byte, i interface{}) error {
-		err := codec.NewDecoderBytes(b, bincHandle).Decode(i)
-		return err
-	},
-}
-
-var snappyJSONCodec = memcache.Codec{
-	Marshal: func(i interface{}) (compressed []byte, err error) {
-		uncompressed, err := json.Marshal(i)
-		if err != nil {
-			return
-		}
-		compressed, err = snappy.Encode(nil, uncompressed)
-		return
-	},
-	Unmarshal: func(compressed []byte, i interface{}) (err error) {
-		var uncompressed []byte
-		if uncompressed, err = snappy.Decode(nil, compressed); err != nil {
-			return
-		}
-		err = json.Unmarshal(uncompressed, i)
-		return
-	},
-}
 
 var snappyGobCodec = memcache.Codec{
 	Marshal: func(i interface{}) (compressed []byte, err error) {
@@ -68,25 +34,6 @@ var snappyGobCodec = memcache.Codec{
 			return
 		}
 		err = memcache.Gob.Unmarshal(uncompressed, i)
-		return
-	},
-}
-
-var snappyBincCodec = memcache.Codec{
-	Marshal: func(i interface{}) (compressed []byte, err error) {
-		var uncompressed []byte
-		if err = codec.NewEncoderBytes(&uncompressed, bincHandle).Encode(i); err != nil {
-			return
-		}
-		compressed, err = snappy.Encode(nil, uncompressed)
-		return
-	},
-	Unmarshal: func(compressed []byte, i interface{}) (err error) {
-		var uncompressed []byte
-		if uncompressed, err = snappy.Decode(nil, compressed); err != nil {
-			return
-		}
-		err = codec.NewDecoderBytes(uncompressed, bincHandle).Decode(i)
 		return
 	},
 }
