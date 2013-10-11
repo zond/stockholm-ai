@@ -20,6 +20,9 @@ window.AIsView = Backbone.View.extend({
 	  ev.preventDefault();
 		this.collection.create({
 		  Name: $('.new-ai-name').val(),
+			Games: 0,
+			Wins: 0,
+			Losses: 0,
 			URL: $('.new-ai-url').val(),
 			IsOwner: true,
 		});
