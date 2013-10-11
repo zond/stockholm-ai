@@ -37,7 +37,7 @@ window.GamesView = Backbone.View.extend({
 		var that = this;
     that.$el.html(that.template({}));
 		that.collection.each(function(game) {
-			that.$('table').append('<tr><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('PlayerNames') + '</a></td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('State') + '</a></td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('Length') + ' turns</a></td></tr>');
+			that.$('table').append('<tr><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('PlayerNames') + '</a></td><td>' + (game.get('WinnerName') != '' ? '<a class="navigate" href="/games/' + game.get('Id') + '">Winner: ' + game.get('WinnerName') + '</a>' : '') + '</td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('State') + '</a></td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('Length') + ' turns</a></td></tr>');
 		});
 		that.ais.each(function(ai) {
       that.$('select').append('<option value="' + ai.get('Id') + '">' + ai.get('Name') + '</option>');

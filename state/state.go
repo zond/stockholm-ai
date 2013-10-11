@@ -183,31 +183,103 @@ func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
 }
 
 func (self *State) executeGrowth(c common.Logger) {
+	execution := []func(){}
 	for _, node := range self.Nodes {
-		if len(node.Units) == 1 {
-			players := make([]PlayerId, 0, len(node.Units))
-			for playerId, _ := range node.Units {
-				players = append(players, playerId)
-			}
+		total := 0
+		for _, units := range node.Units {
+			total += units
+		}
+		players := make([]PlayerId, 0, len(node.Units))
+		for playerId, _ := range node.Units {
+			players = append(players, playerId)
+		}
+		if len(players) == 1 {
 			playerId := players[0]
 			units := node.Units[playerId]
-			if units < node.Size {
-				node.Units[playerId] = common.Min(node.Size, int(1+float64(units)*(1.0+(growthFactor*(float64(node.Size-units)/float64(node.Size))))))
-			} else if units > node.Size {
-				node.Units[playerId] = common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size))))-1))
+			if total < node.Size {
+				nodeCpy := node
+				newSum := common.Min(node.Size, int(1+float64(units)*(1.0+(growthFactor*(float64(node.Size-total)/float64(node.Size))))))
+				execution = append(execution, func() {
+					nodeCpy.Units[playerId] = newSum
+				})
+			}
+		} else if len(players) > 1 {
+			for playerId, units := range node.Units {
+				if total > node.Size {
+					playerIdCpy := playerId
+					nodeCpy := node
+					newSum := common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size))))-1))
+					execution = append(execution, func() {
+						nodeCpy.Units[playerIdCpy] = newSum
+					})
+				}
 			}
 		}
+	}
+	for _, exec := range execution {
+		exec()
 	}
 }
 
 func (self *State) executeConflicts() {
+	execution := []func(){}
+	for _, node := range self.Nodes {
+		total := 0
+		for _, units := range node.Units {
+			total += units
+		}
+		for playerId, units := range node.Units {
+			enemies := total - units
+			if enemies > 0 {
+				newSum := common.Max(0, common.Min(units-1, int(float64(units)-(float64(enemies)/5.0))))
+				playerIdCpy := playerId
+				nodeCpy := node
+				execution = append(execution, func() {
+					nodeCpy.Units[playerIdCpy] = newSum
+				})
+			}
+		}
+	}
+	for _, exec := range execution {
+		exec()
+	}
 }
 
-func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) {
+func (self *State) onlyPlayerLeft(c common.Logger) *PlayerId {
+	players := map[PlayerId]bool{}
+	for _, node := range self.Nodes {
+		for playerId, units := range node.Units {
+			if units > 0 {
+				players[playerId] = true
+			}
+		}
+		for _, edge := range node.Edges {
+			for _, spot := range edge.Units {
+				for playerId, units := range spot {
+					if units > 0 {
+						players[playerId] = true
+					}
+				}
+			}
+		}
+	}
+	playerSlice := []PlayerId{}
+	for playerId, _ := range players {
+		playerSlice = append(playerSlice, playerId)
+	}
+	if len(playerSlice) == 1 {
+		return &playerSlice[0]
+	}
+	return nil
+}
+
+func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *PlayerId) {
 	self.executeTransits(c)
 	self.executeOrders(orderMap)
 	self.executeGrowth(c)
 	self.executeConflicts()
+	winner = self.onlyPlayerLeft(c)
+	return
 }
 
 func RandomState(c common.Logger, players []PlayerId) (result State) {

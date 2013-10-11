@@ -42,6 +42,9 @@ type AI struct {
 	Id        *datastore.Key
 	URL       string
 	Name      string
+	Games     int
+	Wins      int
+	Losses    int
 	Owner     string `json:"-"`
 	IsOwner   bool   `datastore:"-"`
 	CreatedAt time.Time

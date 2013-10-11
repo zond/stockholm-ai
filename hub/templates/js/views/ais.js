@@ -35,11 +35,13 @@ window.AIsView = Backbone.View.extend({
 		var that = this;
     that.$el.html(that.template({}));
 		that.collection.each(function(ai) {
+		  var tr = '<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td>' + ai.get('Games') + ' games</td><td>' + ai.get('Wins') + ' wins</td><td>' + ai.get('Losses') + ' losses</td>';
 		  if (ai.get('IsOwner')) {
-				that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td><button data-id="' + ai.get('Id') + '" class="btn btn-xs delete-button">Delete</button></a></td></tr>');
+			  tr += '<td><button data-id="' + ai.get('Id') + '" class="btn btn-xs delete-button">Delete</button></a></td>'
 			} else {
-				that.$('table').append('<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td></td></tr>');
+			  tr += '<td></td>'
 			}
+			that.$('table').append(tr);
 		});
 		if (window.session.user.loggedIn()) {
 		  that.$('.add-ai').show();

@@ -63,8 +63,10 @@ func (self Games) process(c common.Context) Games {
 type Game struct {
 	Id          *datastore.Key
 	Players     []*datastore.Key
+	Winner      *datastore.Key
 	State       GameState
 	PlayerNames []string `datastore:"-"`
+	WinnerName  string   `datastore:"-"`
 	Turns       Turns    `datastore:"-"`
 	Length      int
 	CreatedAt   time.Time
@@ -117,15 +119,37 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 			orderResp := <-responses
 			orderMap[orderResp.PlayerId] = orderResp.Orders
 		}
-		newTurn := lastTurn.Next(c, orderMap)
+		newTurn, winner := lastTurn.Next(c, orderMap)
 		newTurn.Save(c, self.Id)
-		self.State = StatePlaying
+		if winner == nil {
+			self.State = StatePlaying
+		} else {
+			self.Winner = common.MustDecodeKey(string(*winner))
+			self.State = StateFinished
+		}
 		self.Length += 1
 		self.Save(c)
-		nextTurnFunc.Call(c, self.Id, playerNames)
+		if winner == nil {
+			nextTurnFunc.Call(c, self.Id, playerNames)
+		}
 		return nil
 	}); err != nil {
 		panic(err)
+	}
+	if self.State == StateFinished {
+		for _, playerId := range self.Players {
+			common.Transaction(c, func(common.Context) error {
+				if ai := GetAIById(c, playerId); ai != nil {
+					if playerId.Equal(self.Winner) {
+						ai.Wins += 1
+					} else {
+						ai.Losses += 1
+					}
+					ai.Save(c)
+				}
+				return nil
+			})
+		}
 	}
 }
 
@@ -134,6 +158,9 @@ func (self *Game) setPlayerNames(c common.Context) {
 	for index, id := range self.Players {
 		if ai := GetAIById(c, id); ai != nil {
 			self.PlayerNames[index] = ai.Name
+			if ai.Id.Equal(self.Winner) {
+				self.WinnerName = ai.Name
+			}
 		} else {
 			self.PlayerNames[index] = "[redacted]"
 		}
@@ -224,6 +251,17 @@ func (self *Game) Save(c common.Context) *Game {
 			nextTurnFunc.Call(c, self.Id, self.PlayerNames)
 			return nil
 		})
+		if err == nil {
+			for _, playerId := range self.Players {
+				common.Transaction(c, func(common.Context) error {
+					if ai := GetAIById(c, playerId); ai != nil {
+						ai.Games += 1
+						ai.Save(c)
+					}
+					return nil
+				})
+			}
+		}
 	} else {
 		_, err = datastore.Put(c, self.Id, self)
 	}
