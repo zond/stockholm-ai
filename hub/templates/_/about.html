@@ -6,8 +6,8 @@
 				<li><a href="#source">Source code</a></li>
 				<li><a href="#go">Installing Go</a></li>
 				<li><a href="#ai">Writing your own AI</a></li>
-				<li><a href="#deploying">Deploying your own AI</a></li>
 				<li><a href="#gae">Installing Google App Engine Go SDK</a></li>
+				<li><a href="#deploying">Deploying your own AI</a></li>
 				<li><a href="#running">Running your own server</a></li>
 			</ul>
 		</div>
@@ -121,6 +121,16 @@ go run test.go
 			<p>
 			When you are satisfied that your AI is working and can move units around, it's time to modify it to do something more clever than randomly moving units around. Go to <a href="https://github.com/zond/stockholm-ai/blob/master/hub/examples/examples.go">https://github.com/zond/stockholm-ai/blob/master/hub/examples/examples.go</a> to see exactly what the Randomizer does, and put an improved version of it in your own AI.
 			</p>
+			<a name="gae"></a>
+			<h3>Installing Google App Engine Go SDK</h3>
+			<p>
+			Download <a href="https://developers.google.com/appengine/downloads#Google_App_Engine_SDK_for_Go">Google App Engine Go SDK</a> and unpack it someplace:
+			</p>
+<pre>
+curl -O http://googleappengine.googlecode.com/files/go_appengine_sdk_darwin_amd64-1.8.5.zip
+unzip go_appengine_sdk_darwin_amd64-1.8.5.zip
+export PATH=$PATH:$PWD/go_appengine/
+</pre>
 			<a name="deploying"></a>
 			<h3>Deploying your own AI</h3>
 			<p>
@@ -134,16 +144,6 @@ go run test.go
 			</p>
 <pre>
 appcfg.py update stockholm-ai/randomizer
-</pre>
-			<a name="gae"></a>
-			<h3>Installing Google App Engine Go SDK</h3>
-			<p>
-			Download <a href="https://developers.google.com/appengine/downloads#Google_App_Engine_SDK_for_Go">Google App Engine Go SDK</a> and unpack it someplace:
-			</p>
-<pre>
-curl -O http://googleappengine.googlecode.com/files/go_appengine_sdk_darwin_amd64-1.8.5.zip
-unzip go_appengine_sdk_darwin_amd64-1.8.5.zip
-export PATH=$PATH:$PWD/go_appengine/
 </pre>
 			<a name="running"></a>
 			<h3>Running your own server</h3>
