@@ -3,10 +3,11 @@
 		<div id="sidebar" class="col-xs-2">
 			<ul class="nav nav-list affix">
 				<li><a href="#general">General information</a></li>
-				<li><a href="#go">Installing Go</a></li>
 				<li><a href="#source">Source code</a></li>
+				<li><a href="#go">Installing Go</a></li>
 				<li><a href="#ai">Writing your own AI</a></li>
 				<li><a href="#running">Running your own server</a></li>
+				<li><a href="#deploying">Deploying your own AI</a></li>
 			</ul>
 		</div>
 		<div class="col-xs-10">
@@ -28,6 +29,14 @@
 			<p>
 			<strong>Units</strong> on <strong>edges</strong> will travel along the <strong>edge</strong> for as many <strong>turns</strong> as the length of the <strong>edge</strong> until they reach the <strong>node</strong> on the other side of the <strong>edge</strong>.
 			</p>
+			<a name="source"></a>
+			<h3>Source code</h3>
+			<p>
+			The source code for stockholm-ai can be found, in its entirety, at <a href="https://github.com/zond/stockholm-ai">https://github.com/zond/stockholm-ai</a>.
+			</p>
+			<p>
+			API documentation can be found at <a href="http://godoc.org/github.com/zond/stockholm-ai">http://godoc.org/github.com/zond/stockholm-ai</a>.
+			</p>
 			<a name="go"></a>
 			<h3>Installing Go</h3>
 			<p>
@@ -48,21 +57,13 @@ export PATH=$PATH:$PWD/go/bin
 export GOPATH=$HOME/go
 mkdir $GOPATH
 </pre>
-			<a name="source"></a>
-			<h3>Source code</h3>
-			<p>
-			The source code for stockholm-ai can be found, in its entirety, at <a href="https://github.com/zond/stockholm-ai">https://github.com/zond/stockholm-ai</a>.
-			</p>
-			<p>
-			API documentation can be found at <a href="http://godoc.org/github.com/zond/stockholm-ai">http://godoc.org/github.com/zond/stockholm-ai</a>.
-			</p>
 			<a name="ai"></a>
 			<h3>Writing your own AI</h3>
 			<p>
 			To run an AI for stockholm-ai you only need a web server reachable from the internet.
 			</p>
 			<p>
-			The web server must respond to POST requests containing a JSON encoded body describing the game state by sending another JSON encoded body describing the orders to issue for the provided game state.
+			The web server must respond to <code>POST</code> requests containing a <code>JSON</code> encoded body describing the game state by sending another <code>JSON</code> encoded body describing the orders to issue for the provided game state.
 			</p>
 			<p>
 			Since I am currently too lazy to describe this in detail, I will proceed with instructions on how to do this in <a href="http://golang.org/">Go</a>.
@@ -84,6 +85,41 @@ func main() {
 	}))
 }
 </pre>
+			<p>
+			Install stockholm-ai as a Go library:
+			</p>
+<pre>
+go get github.com/zond/stockholm-ai
+</pre>
+			<p>
+      Replace the anonymous handler in the above example with the <code>Randomizer</code> from <a href="https://github.com/zond/stockholm-ai/tree/master/hub/examples">https://github.com/zond/stockholm-ai/tree/master/hub/examples</a>:
+			</p>
+<pre>
+package main
+
+import (
+	"github.com/zond/stockholm-ai/ai"
+	"github.com/zond/stockholm-ai/common"
+	"github.com/zond/stockholm-ai/hub/examples"
+	"net/http"
+)
+
+func main() {
+	http.ListenAndServe("0.0.0.0:8080", ai.HTTPHandlerFunc(common.GoLoggerFactory, examples.Randomizer{}))
+}
+</pre>
+			<p>
+			Run your new server:
+			</p>
+<pre>
+go run test.go
+</pre>
+			<p>
+			Now, all you have to do to test it is to add it as an AI at <a href="http://stockholm-ai.appspot.com">stockholm-ai</a>.
+			</p>
+			<p>
+			When you are satisfied that your AI is working and can move units around, it's time to modify it to do something more clever than randomly moving units around. Go to <a href="https://github.com/zond/stockholm-ai/blob/master/hub/examples/examples.go">https://github.com/zond/stockholm-ai/blob/master/hub/examples/examples.go</a> to see exactly what the Randomizer does, and put an improved version of it in your own AI.
+			</p>
 			<a name="running"></a>
 			<h3>Running your own server</h3>
 			<p>
@@ -114,7 +150,6 @@ git clone https://github.com/zond/stockholm-ai.git
 dev_appserver.py stockholm-ai/hub
 </pre>
 			</div>
-
 		</div>
 	</div>
 </div>

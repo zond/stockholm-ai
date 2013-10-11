@@ -259,9 +259,7 @@ func init() {
 	aisRouter.Methods("GET").HandlerFunc(handler(getAIs))
 	aisRouter.Methods("POST").HandlerFunc(handler(createAI))
 
-	router.Path("/examples/randomizer").Methods("POST").Handler(ai.HTTPHandlerFunc(func(r *http.Request) aiCommon.Logger {
-		return appengine.NewContext(r)
-	}, examples.Randomizer{}))
+	router.Path("/examples/randomizer").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, examples.Randomizer{}))
 
 	handleStatic(router, "static")
 

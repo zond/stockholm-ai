@@ -4,8 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -15,6 +17,10 @@ func init() {
 }
 
 type LoggerFactory func(r *http.Request) Logger
+
+func GoLoggerFactory(r *http.Request) Logger {
+	return log.New(os.Stdout, "", 0)
+}
 
 func MustEncodeJSON(w io.Writer, i interface{}) {
 	if err := json.NewEncoder(w).Encode(i); err != nil {
@@ -31,7 +37,7 @@ func RandomString(n int) string {
 }
 
 type Logger interface {
-	Infof(f string, o ...interface{})
+	Printf(f string, o ...interface{})
 }
 
 func MustDecodeJSON(r io.Reader, result interface{}) {

@@ -244,7 +244,7 @@ func (self *Game) Save(c common.Context) *Game {
 				playerIds = append(playerIds, state.PlayerId(id.Encode()))
 			}
 			turn := &Turn{
-				State: state.RandomState(c, playerIds),
+				State: state.RandomState(common.GAELogger{c}, playerIds),
 			}
 			turn.Save(c, self.Id)
 			self.Turns = Turns{*turn}

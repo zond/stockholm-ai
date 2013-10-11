@@ -21,6 +21,18 @@ func Transaction(outerContext Context, f func(Context) error) error {
 	}, &datastore.TransactionOptions{XG: true})
 }
 
+type GAELogger struct {
+	appengine.Context
+}
+
+func (self GAELogger) Printf(f string, i ...interface{}) {
+	self.Infof(f, i...)
+}
+
+func GAELoggerFactory(r *http.Request) common.Logger {
+	return GAELogger{appengine.NewContext(r)}
+}
+
 func MustMarshal(i interface{}) (b []byte) {
 	var err error
 	if b, err = MemCodec.Marshal(i); err != nil {
