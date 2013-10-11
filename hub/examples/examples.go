@@ -19,7 +19,7 @@ func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, s state.S
 		if node.Units[me] > 0 {
 			breakpoints := make(sort.Float64Slice, len(node.Edges))
 			for index, _ := range breakpoints {
-				breakpoints[index] = rand.Float64()
+				breakpoints[index] = rand.Float64() / 5
 			}
 			sort.Sort(breakpoints)
 			lastRate := 0.0
