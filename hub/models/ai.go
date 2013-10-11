@@ -4,6 +4,8 @@ import (
 	"appengine/datastore"
 	"common"
 	"fmt"
+	"sort"
+	"time"
 )
 
 const (
@@ -17,6 +19,18 @@ func AIByIdKey(k interface{}) string {
 
 type AIs []AI
 
+func (self AIs) Len() int {
+	return len(self)
+}
+
+func (self AIs) Less(i, j int) bool {
+	return self[j].CreatedAt.Before(self[i].CreatedAt)
+}
+
+func (self AIs) Swap(i, j int) {
+	self[i], self[j] = self[j], self[i]
+}
+
 func (self AIs) process(c common.Context) AIs {
 	for index, _ := range self {
 		(&self[index]).process(c)
@@ -25,11 +39,12 @@ func (self AIs) process(c common.Context) AIs {
 }
 
 type AI struct {
-	Id      *datastore.Key
-	URL     string
-	Name    string
-	Owner   string `json:"-"`
-	IsOwner bool   `datastore:"-"`
+	Id        *datastore.Key
+	URL       string
+	Name      string
+	Owner     string `json:"-"`
+	IsOwner   bool   `datastore:"-"`
+	CreatedAt time.Time
 }
 
 func (self *AI) process(c common.Context) *AI {
@@ -79,6 +94,7 @@ func GetAllAIs(c common.Context) (result AIs) {
 	common.Memoize(c, AllAIsKey, &result, func() interface{} {
 		return findAllAIs(c)
 	})
+	sort.Sort(result)
 	return result.process(c)
 }
 
@@ -90,6 +106,7 @@ func (self *AI) Delete(c common.Context) {
 func (self *AI) Save(c common.Context) *AI {
 	var err error
 	if self.Id == nil {
+		self.CreatedAt = time.Now()
 		self.Id, err = datastore.Put(c, datastore.NewKey(c, AIKind, "", 0, nil), self)
 	} else {
 		_, err = datastore.Put(c, self.Id, self)

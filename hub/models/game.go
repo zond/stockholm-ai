@@ -45,7 +45,7 @@ func (self Games) Len() int {
 	return len(self)
 }
 
-func (self Games) Less(i, j int) bool {
+func (self Games) Less(j, i int) bool {
 	return self[i].CreatedAt.Before(self[j].CreatedAt)
 }
 
@@ -55,7 +55,7 @@ func (self Games) Swap(i, j int) {
 
 func (self Games) process(c common.Context) Games {
 	for index, _ := range self {
-		(&self[index]).process(c)
+		(&self[index]).fastProcess(c)
 	}
 	return self
 }
@@ -66,6 +66,7 @@ type Game struct {
 	State       GameState
 	PlayerNames []string `datastore:"-"`
 	Turns       Turns    `datastore:"-"`
+	Length      int
 	CreatedAt   time.Time
 }
 
@@ -78,7 +79,7 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	c := common.Context{Context: cont}
 	self := getGameById(c, id)
 	self.PlayerNames = playerNames
-	if CountTurnsByParent(c, self.Id) > maxGameDuration {
+	if self.Length > maxGameDuration {
 		self.State = StateFinished
 		self.Save(c)
 		c.Infof("Ended %v due to timeout", self.Id)
@@ -119,6 +120,7 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 		newTurn := lastTurn.Next(c, orderMap)
 		newTurn.Save(c, self.Id)
 		self.State = StatePlaying
+		self.Length += 1
 		self.Save(c)
 		nextTurnFunc.Call(c, self.Id, playerNames)
 		return nil
@@ -136,6 +138,11 @@ func (self *Game) setPlayerNames(c common.Context) {
 			self.PlayerNames[index] = "[redacted]"
 		}
 	}
+}
+
+func (self *Game) fastProcess(c common.Context) *Game {
+	self.setPlayerNames(c)
+	return self
 }
 
 func (self *Game) process(c common.Context) *Game {
@@ -199,6 +206,7 @@ func (self *Game) Save(c common.Context) *Game {
 		err = common.Transaction(c, func(c common.Context) (err error) {
 			self.CreatedAt = time.Now()
 			self.State = StateCreated
+			self.Length = 1
 			self.Id, err = datastore.Put(c, datastore.NewKey(c, GameKind, "", 0, nil), self)
 			if err != nil {
 				return

@@ -76,11 +76,13 @@ window.GameView = Backbone.View.extend({
 		  var label = $('#' + selEscape(nodeId) + ' text');
 			label.empty();
       for (var playerId in node.Units) {
-			  var tspan = document.createElementNS(SVG, 'tspan');
-				tspan.setAttribute('fill', players[playerId].color);
-				tspan.setAttribute('font-weight', 'bold');
-				tspan.textContent = '' + node.Units[playerId] + ' ';
-				label[0].appendChild(tspan);
+			  if (node.Units[playerId] > 0) {
+					var tspan = document.createElementNS(SVG, 'tspan');
+					tspan.setAttribute('fill', players[playerId].color);
+					tspan.setAttribute('font-weight', 'bold');
+					tspan.textContent = '' + node.Units[playerId] + ' ';
+					label[0].appendChild(tspan);
+				}
 			}
 			for (var dstId in node.Edges) {
 			  var edge = node.Edges[dstId];

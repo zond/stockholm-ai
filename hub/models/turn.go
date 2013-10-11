@@ -4,7 +4,6 @@ import (
 	"appengine/datastore"
 	"common"
 	"fmt"
-	aiCommon "github.com/zond/stockholm-ai/common"
 	state "github.com/zond/stockholm-ai/state"
 	"sort"
 	"time"
@@ -65,7 +64,7 @@ func (self *Turn) Next(c common.Context, orderMap map[state.PlayerId]state.Order
 
 func (self *Turn) process(c common.Context) *Turn {
 	if len(self.SerializedState) > 0 {
-		aiCommon.MustUnmarshalJSON(self.SerializedState, &self.State)
+		common.MustUnmarshal(self.SerializedState, &self.State)
 	}
 	return self
 }
@@ -113,30 +112,14 @@ func GetLatestTurnByParent(c common.Context, parent *datastore.Key) *Turn {
 	return nil
 }
 
-func countTurnsByParent(c common.Context, parent *datastore.Key) (result int) {
-	var err error
-	result, err = datastore.NewQuery(TurnKind).Ancestor(parent).Count(c)
-	common.AssertOkError(err)
-	return
-}
-
-func CountTurnsByParent(c common.Context, parent *datastore.Key) (result int) {
-	common.Memoize(c, countTurnsKeyForParent(parent), &result, func() interface{} {
-		return countTurnsByParent(c, parent)
-	})
-	return
-}
-
 func (self *Turn) Save(c common.Context, parent *datastore.Key) *Turn {
-	self.SerializedState = aiCommon.MustMarshalJSON(self.State)
+	self.SerializedState = common.MustMarshal(self.State)
 	var err error
 	if self.Id == nil {
 		self.CreatedAt = time.Now()
-		count := CountTurnsByParent(c, parent)
 		self.Id, err = datastore.Put(c, datastore.NewKey(c, TurnKind, "", 0, parent), self)
 		common.AssertOkError(err)
 		common.MemPut(c, latestTurnKeyForParent(parent), self)
-		common.MemPut(c, countTurnsKeyForParent(parent), count+1)
 	} else {
 		_, err = datastore.Put(c, self.Id, self)
 		common.AssertOkError(err)

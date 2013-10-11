@@ -21,6 +21,20 @@ func Transaction(outerContext Context, f func(Context) error) error {
 	}, &datastore.TransactionOptions{XG: true})
 }
 
+func MustMarshal(i interface{}) (b []byte) {
+	var err error
+	if b, err = MemCodec.Marshal(i); err != nil {
+		panic(err)
+	}
+	return
+}
+
+func MustUnmarshal(b []byte, i interface{}) {
+	if err := MemCodec.Unmarshal(b, i); err != nil {
+		panic(err)
+	}
+}
+
 type Context struct {
 	appengine.Context
 	Req     *http.Request

@@ -4,9 +4,12 @@ import (
 	"appengine"
 	"appengine/memcache"
 	"bytes"
+	"code.google.com/p/snappy-go/snappy"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"github.com/ugorji/go/codec"
 	"io"
 	"math/rand"
 	"reflect"
@@ -17,6 +20,78 @@ const (
 	regularCache = iota
 	nilCache
 )
+
+var bincHandle = new(codec.BincHandle)
+
+var bincCodec = memcache.Codec{
+	Marshal: func(i interface{}) (b []byte, err error) {
+		err = codec.NewEncoderBytes(&b, bincHandle).Encode(i)
+		return
+	},
+	Unmarshal: func(b []byte, i interface{}) error {
+		err := codec.NewDecoderBytes(b, bincHandle).Decode(i)
+		return err
+	},
+}
+
+var snappyJSONCodec = memcache.Codec{
+	Marshal: func(i interface{}) (compressed []byte, err error) {
+		uncompressed, err := json.Marshal(i)
+		if err != nil {
+			return
+		}
+		compressed, err = snappy.Encode(nil, uncompressed)
+		return
+	},
+	Unmarshal: func(compressed []byte, i interface{}) (err error) {
+		var uncompressed []byte
+		if uncompressed, err = snappy.Decode(nil, compressed); err != nil {
+			return
+		}
+		err = json.Unmarshal(uncompressed, i)
+		return
+	},
+}
+
+var snappyGobCodec = memcache.Codec{
+	Marshal: func(i interface{}) (compressed []byte, err error) {
+		uncompressed, err := memcache.Gob.Marshal(i)
+		if err != nil {
+			return
+		}
+		compressed, err = snappy.Encode(nil, uncompressed)
+		return
+	},
+	Unmarshal: func(compressed []byte, i interface{}) (err error) {
+		var uncompressed []byte
+		if uncompressed, err = snappy.Decode(nil, compressed); err != nil {
+			return
+		}
+		err = memcache.Gob.Unmarshal(uncompressed, i)
+		return
+	},
+}
+
+var snappyBincCodec = memcache.Codec{
+	Marshal: func(i interface{}) (compressed []byte, err error) {
+		var uncompressed []byte
+		if err = codec.NewEncoderBytes(&uncompressed, bincHandle).Encode(i); err != nil {
+			return
+		}
+		compressed, err = snappy.Encode(nil, uncompressed)
+		return
+	},
+	Unmarshal: func(compressed []byte, i interface{}) (err error) {
+		var uncompressed []byte
+		if uncompressed, err = snappy.Decode(nil, compressed); err != nil {
+			return
+		}
+		err = codec.NewDecoderBytes(uncompressed, bincHandle).Decode(i)
+		return
+	},
+}
+
+var MemCodec = snappyGobCodec
 
 func isNil(v reflect.Value) bool {
 	k := v.Kind()
@@ -66,14 +141,14 @@ func MemDel(c appengine.Context, keys ...string) {
 }
 
 func MemGet(c appengine.Context, key string, val interface{}) {
-	if _, err := memcache.Gob.Get(c, keyify(key), val); err != nil && err != memcache.ErrCacheMiss {
+	if _, err := MemCodec.Get(c, keyify(key), val); err != nil && err != memcache.ErrCacheMiss {
 		c.Errorf("When trying to load %v(%v) => %#v: %#v", key, keyify(key), val, err)
 		panic(err)
 	}
 }
 
 func MemPut(c appengine.Context, key string, val interface{}) {
-	if err := memcache.Gob.Set(c, &memcache.Item{
+	if err := MemCodec.Set(c, &memcache.Item{
 		Key:    keyify(key),
 		Object: val,
 	}); err != nil {
@@ -138,7 +213,7 @@ func memGetMulti(c appengine.Context, keys []string, dests []interface{}) (items
 	for index, keyHash := range keys {
 		if item, ok = itemHash[keyHash]; ok {
 			items[index] = item
-			if err := memcache.Gob.Unmarshal(item.Value, dests[index]); err != nil {
+			if err := MemCodec.Unmarshal(item.Value, dests[index]); err != nil {
 				errors[index] = err
 			}
 		} else {
@@ -175,7 +250,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 		key := keys[index]
 		destP := destPs[index]
 		if err == memcache.ErrCacheMiss {
-			//c.Infof("Didn't find %v in memcache, regenerating", key)
+			c.Infof("Didn't find %v in memcache, regenerating", key)
 			go func() {
 				defer func() {
 					done <- true
@@ -185,7 +260,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 				if isNil(resultValue) {
 					if cacheNil {
 						nilObj := reflect.Indirect(reflect.ValueOf(destP)).Interface()
-						if err = memcache.Gob.Set(c, &memcache.Item{
+						if err = MemCodec.Set(c, &memcache.Item{
 							Key:        keyH,
 							Flags:      nilCache,
 							Object:     nilObj,
@@ -197,7 +272,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 					}
 					exists[index] = false
 				} else {
-					if err = memcache.Gob.Set(c, &memcache.Item{
+					if err = MemCodec.Set(c, &memcache.Item{
 						Key:        keyH,
 						Object:     result,
 						Expiration: dur,
