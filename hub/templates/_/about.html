@@ -6,8 +6,8 @@
 				<li><a href="#source">Source code</a></li>
 				<li><a href="#go">Installing Go</a></li>
 				<li><a href="#ai">Writing your own AI</a></li>
-				<li><a href="#running">Running your own server</a></li>
 				<li><a href="#deploying">Deploying your own AI</a></li>
+				<li><a href="#running">Running your own server</a></li>
 			</ul>
 		</div>
 		<div class="col-xs-10">
@@ -119,6 +119,17 @@ go run test.go
 			</p>
 			<p>
 			When you are satisfied that your AI is working and can move units around, it's time to modify it to do something more clever than randomly moving units around. Go to <a href="https://github.com/zond/stockholm-ai/blob/master/hub/examples/examples.go">https://github.com/zond/stockholm-ai/blob/master/hub/examples/examples.go</a> to see exactly what the Randomizer does, and put an improved version of it in your own AI.
+			</p>
+			<a name="deploying"></a>
+			<h3>Deploying your own AI</h3>
+			<p>
+			If you have your own host accessible from the internet, you could be finished with your AI work after <a href="#ai">writing your own AI</a>, but often you don't have the resources or energy to set something like that up. If this is the case you can simply host your AI on Google App Engine.
+			</p>
+			<p>
+			Begin by signing up at <a href="https://developers.google.com/appengine/">https://developers.google.com/appengine/</a> to get an account. Then go to <a href="https://appengine.google.com/">https://appengine.google.com/</a> to create a new application. Pick a nice name and go with the default options.
+			</p>
+			<p>
+			Now you can just fork <a href="https://github.com/zond/stockholm-ai">https://github.com/zond/stockholm-ai</a> and edit 
 			</p>
 			<a name="running"></a>
 			<h3>Running your own server</h3>
