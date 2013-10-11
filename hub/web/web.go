@@ -15,12 +15,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"text/template"
 )
-
-var spaceRegexp = regexp.MustCompile("\\s+")
 
 var htmlTemplates = template.Must(template.New("htmlTemplates").ParseGlob("templates/html/*.html"))
 var jsModelTemplates = template.Must(template.New("jsModelTemplates").ParseGlob("templates/js/models/*.js"))
@@ -60,9 +57,9 @@ func render_Templates(c common.Context) {
 			panic(err)
 		}
 		rendered = string(buf.Bytes())
-		rendered = spaceRegexp.ReplaceAllString(rendered, " ")
 		rendered = strings.Replace(rendered, "\\", "\\\\", -1)
 		rendered = strings.Replace(rendered, "'", "\\'", -1)
+		rendered = strings.Replace(rendered, "\n", "\\n", -1)
 		fmt.Fprint(c.Resp, rendered)
 		fmt.Fprintln(c.Resp, "');")
 		fmt.Fprintln(c.Resp, "  $('head').append(n);")

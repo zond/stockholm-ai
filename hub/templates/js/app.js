@@ -57,6 +57,7 @@ $(window).load(function() {
 			"ais": "ais",
 			"games": "games",
 			"games/:id": "showGame",
+			"*all": "about",
 		},
 
 		showGame: function(id) {
