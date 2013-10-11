@@ -5,11 +5,11 @@ import (
 	"appengine/user"
 	"bytes"
 	"common"
-	"examples"
 	"fmt"
 	"github.com/gorilla/mux"
 	ai "github.com/zond/stockholm-ai/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
+	randomizerAi "github.com/zond/stockholm-ai/randomizer/ai"
 	"io"
 	"models"
 	"net/http"
@@ -259,7 +259,7 @@ func init() {
 	aisRouter.Methods("GET").HandlerFunc(handler(getAIs))
 	aisRouter.Methods("POST").HandlerFunc(handler(createAI))
 
-	router.Path("/examples/randomizer").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, examples.Randomizer{}))
+	router.Path("/examples/randomizer").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, randomizerAi.Randomizer{}))
 
 	handleStatic(router, "static")
 

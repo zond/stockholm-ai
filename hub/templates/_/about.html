@@ -101,12 +101,12 @@ package main
 import (
 	"github.com/zond/stockholm-ai/ai"
 	"github.com/zond/stockholm-ai/common"
-	"github.com/zond/stockholm-ai/hub/examples"
+	randomizerAi "github.com/zond/stockholm-ai/randomizer/ai"
 	"net/http"
 )
 
 func main() {
-	http.ListenAndServe("0.0.0.0:8080", ai.HTTPHandlerFunc(common.GoLoggerFactory, examples.Randomizer{}))
+	http.ListenAndServe("0.0.0.0:8081", ai.HTTPHandlerFunc(common.GoLoggerFactory, randomizerAi.Randomizer{}))
 }
 </pre>
 			<p>
