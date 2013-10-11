@@ -100,8 +100,9 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 						responses <- orderResp
 					}()
 					req := ai.OrderRequest{
-						Me:    orderResp.PlayerId,
-						State: lastTurn.State,
+						Me:     orderResp.PlayerId,
+						State:  lastTurn.State,
+						GameId: state.GameId(self.Id.Encode()),
 					}
 					buf := &bytes.Buffer{}
 					aiCommon.MustEncodeJSON(buf, req)

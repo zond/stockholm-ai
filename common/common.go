@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -12,6 +13,8 @@ import (
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
+
+type LoggerFactory func(r *http.Request) Logger
 
 func MustEncodeJSON(w io.Writer, i interface{}) {
 	if err := json.NewEncoder(w).Encode(i); err != nil {
@@ -88,6 +91,9 @@ func Min(is ...int) (result int) {
 	return
 }
 
+/*
+Norm returns a random int in the normal distribution with average avg and standard deviance dev, strictly limited by min and max (inclusive).
+*/
 func Norm(avg, dev, min, max int) (result int) {
 	result = int(rand.NormFloat64()*float64(dev) + float64(avg))
 	if result < min {

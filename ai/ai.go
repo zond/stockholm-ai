@@ -6,18 +6,31 @@ import (
 	"net/http"
 )
 
+/*
+OrderRequest encapsulates the JSON body in the requests from the hub to the
+AI players for each turn.
+*/
 type OrderRequest struct {
-	Me    state.PlayerId
+	// Me is the id used to represent the receiving AI in the state.
+	Me state.PlayerId
+	// GameId is the unique id of the game, if the AI wants to keep state between order requests.
+	GameId state.GameId
+	// State contains all the state of the game for the turn the order request refers to.
 	State state.State
 }
 
-type LoggerFactory func(r *http.Request) common.Logger
-
+/*
+AI has to be implemented by any player of the game.
+*/
 type AI interface {
+	// Orders returns the orders the AI playing me wants to issue at the turn described by s.
 	Orders(logger common.Logger, me state.PlayerId, s state.State) state.Orders
 }
 
-func HTTPHandlerFunc(lf LoggerFactory, ai AI) http.HandlerFunc {
+/*
+HTTPHandlerFunc returns an http.HandlerFunc to use when hosting an AI.
+*/
+func HTTPHandlerFunc(lf common.LoggerFactory, ai AI) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req OrderRequest
 		common.MustDecodeJSON(r.Body, &req)

@@ -14,9 +14,17 @@ type NodeId string
 
 type PlayerId string
 
+type GameId string
+
+/*
+Edge goes from one node to another.
+*/
 type Edge struct {
-	Src   NodeId
-	Dst   NodeId
+	// Src is the id of the source node.
+	Src NodeId
+	// Dst is the id of the destination node.
+	Dst NodeId
+	// Units contains the units in transit along the edge.
 	Units []map[PlayerId]int
 }
 
@@ -26,10 +34,17 @@ func (self *Edge) init() {
 	}
 }
 
+/*
+Nodes contain units, and are connected by edges.
+*/
 type Node struct {
-	Id    NodeId
-	Size  int
+	// Id is the id of the node
+	Id NodeId
+	// Size is the number of units supported by the node. If less units, from a single player, occupy the node they will procreate. If more units occupy the node they will starve.
+	Size int
+	// Units contain the number of units for each player occupying this node.
 	Units map[PlayerId]int
+	// Edges go from this node to others.
 	Edges map[NodeId]Edge
 }
 
@@ -107,6 +122,9 @@ func (self *Node) connect(c common.Logger, allNodes []*Node, nodeMap map[NodeId]
 	}
 }
 
+/*
+RandomNode returns a random node without connections.
+*/
 func RandomNode() (result *Node) {
 	result = &Node{
 		Size:  common.Norm(50, 25, 10, 100),
@@ -117,15 +135,30 @@ func RandomNode() (result *Node) {
 	return
 }
 
+/*
+Order contains a single order from an AI.
+
+Orders will start units moving along edges of nodes, and they will be unorderable until they arrive.
+*/
 type Order struct {
-	Src   NodeId
-	Dst   NodeId
+	// Src is from where the units should move.
+	Src NodeId
+	// Dst is where the units should move.
+	Dst NodeId
+	// Units is the number of units to move.
 	Units int
 }
 
+/*
+Orders are given by AIs to move around their units.
+*/
 type Orders []Order
 
+/*
+State completely describes a single turn of the game.
+*/
 type State struct {
+	// Nodes are the nodes in the game.
 	Nodes map[NodeId]*Node
 }
 
@@ -273,6 +306,9 @@ func (self *State) onlyPlayerLeft(c common.Logger) *PlayerId {
 	return nil
 }
 
+/*
+Next changes this state into the next state, subject to the provided orders.
+*/
 func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *PlayerId) {
 	self.executeTransits(c)
 	self.executeOrders(orderMap)
@@ -282,6 +318,9 @@ func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *
 	return
 }
 
+/*
+RandomState creates a random state for the provided players.
+*/
 func RandomState(c common.Logger, players []PlayerId) (result State) {
 	result.Nodes = map[NodeId]*Node{}
 	size := common.Norm(len(players)*6, len(players), len(players)*4, len(players)*10)
