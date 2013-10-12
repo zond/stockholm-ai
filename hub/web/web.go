@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	ai "github.com/zond/stockholm-ai/ai"
+	brokenAi "github.com/zond/stockholm-ai/broken/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
 	randomizerAi "github.com/zond/stockholm-ai/randomizer/ai"
 	simpletonAi "github.com/zond/stockholm-ai/simpleton/ai"
@@ -141,6 +142,14 @@ func getAIs(c common.Context) {
 	c.RenderJSON(models.GetAllAIs(c))
 }
 
+func getAIErrors(c common.Context) {
+	if c.Authenticated() {
+		if ai := models.GetAIById(c, common.MustDecodeKey(c.Vars["ai_id"])); ai != nil && ai.Owner == c.User.Email {
+			c.RenderJSON(ai.GetErrors(c))
+		}
+	}
+}
+
 func getGames(c common.Context) {
 	c.RenderJSON(models.GetAllGames(c))
 }
@@ -173,7 +182,7 @@ func createAI(c common.Context) {
 
 func deleteAI(c common.Context) {
 	if c.Authenticated() {
-		if ai := models.GetAIById(c, common.MustDecodeKey(c.Vars["ai_id"])); ai.Owner == c.User.Email {
+		if ai := models.GetAIById(c, common.MustDecodeKey(c.Vars["ai_id"])); ai != nil && ai.Owner == c.User.Email {
 			ai.Delete(c)
 		}
 	}
@@ -255,6 +264,10 @@ func init() {
 	aisRouter := router.PathPrefix("/ais").MatcherFunc(wantsJSON).Subrouter()
 
 	aiRouter := aisRouter.PathPrefix("/{ai_id}").Subrouter()
+
+	aiErrorsRouter := aiRouter.Path("/errors").Subrouter()
+	aiErrorsRouter.Methods("GET").HandlerFunc(handler(getAIErrors))
+
 	aiRouter.Methods("DELETE").HandlerFunc(handler(deleteAI))
 
 	aisRouter.Methods("GET").HandlerFunc(handler(getAIs))
@@ -262,6 +275,7 @@ func init() {
 
 	router.Path("/examples/randomizer").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, randomizerAi.Randomizer{}))
 	router.Path("/examples/simpleton").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, simpletonAi.Simpleton{}))
+	router.Path("/examples/broken").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, brokenAi.Broken{}))
 
 	handleStatic(router, "static")
 

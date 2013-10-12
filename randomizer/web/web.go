@@ -1,4 +1,4 @@
-package randomizer
+package web
 
 import (
 	ai "github.com/zond/stockholm-ai/ai"
