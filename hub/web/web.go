@@ -151,7 +151,9 @@ func getAIErrors(c common.Context) {
 }
 
 func getGames(c common.Context) {
-	c.RenderJSON(models.GetAllGames(c))
+	limit := aiCommon.TryParseInt(c.Req.URL.Query().Get("limit"), 10)
+	offset := aiCommon.TryParseInt(c.Req.URL.Query().Get("offset"), 0)
+	c.RenderJSON(models.GetGamePage(c, offset, limit))
 }
 
 func getGame(c common.Context) {
