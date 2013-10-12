@@ -303,6 +303,9 @@ func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *
 	return
 }
 
+/*
+PathFilter will return if a node is accepted by the filter.
+*/
 type PathFilter func(node *Node) bool
 
 type pathStep struct {
@@ -310,44 +313,61 @@ type pathStep struct {
 	pos  NodeId
 }
 
+/*
+Path will return the shortest path between src and dst in self, discounting all paths that don't match the filter. A nil filter matches all nodes.
+*/
 func (self *State) Path(src, dst NodeId, filter PathFilter) (result []NodeId) {
+	// queue of paths to try
 	queue := []pathStep{
 		pathStep{
 			path: nil,
 			pos:  src,
 		},
 	}
-	seen := map[NodeId]bool{}
+	// found shortest paths to the nodes
+	paths := map[NodeId][]NodeId{
+		src: nil,
+	}
+	// next step preallocated
 	step := pathStep{}
+	// best path to the dest so far
+	var best []NodeId
+	// as long as we have new paths to try
 	for len(queue) > 0 {
+		// pick first path to try
 		step = queue[0]
+		// pop the queue
 		queue = queue[1:]
-		if !seen[step.pos] {
-			if node, found := self.Nodes[step.pos]; found {
-				for _, edge := range node.Edges {
-					if result == nil || len(step.path)+len(edge.Units) < len(result) {
+		// if the node actually exists
+		if node, found := self.Nodes[step.pos]; found {
+			// for each edge from the node
+			for _, edge := range node.Edges {
+				// if we either haven't been where this edge leads before, or we would get there along a shorter path this time (*1)
+				if lastPathHere, found := paths[edge.Dst]; !found || len(step.path)+len(edge.Units) < len(lastPathHere) {
+					// if we either haven't found dst yet, or if following this path is shorter than where we found dst
+					if best == nil || len(step.path)+len(edge.Units) < len(best) {
+						// if we aren't filtering nodes, or this node matches the filter
 						if filter == nil || filter(node) {
-							thisPath := append([]NodeId{}, step.path...)
-							thisPath = append(thisPath, edge.Dst)
-							for _, _ = range edge.Units {
-								thisPath = append(thisPath, edge.Dst)
-							}
-							if edge.Dst == dst && (result == nil || len(thisPath) < len(result)) {
-								result = thisPath
-							} else {
-								queue = append(queue, pathStep{
-									path: thisPath,
-									pos:  edge.Dst,
-								})
-							}
+							// make a new path that is the path here + this node + the edge we want to follow
+							thisPath := make([]NodeId, len(step.path)+1+len(edge.Units))
+							// copy the path to here to the new path
+							copy(thisPath, step.path)
+							// add this node
+							thisPath[len(step.path)] = edge.Dst
+							// remember that this is the best way so far (guaranteed by *1)
+							paths[edge.Dst] = thisPath
+							// queue up following this path further
+							queue = append(queue, pathStep{
+								path: thisPath,
+								pos:  edge.Dst,
+							})
 						}
 					}
 				}
 			}
-			seen[step.pos] = true
 		}
 	}
-	return
+	return paths[dst]
 }
 
 func NewState() *State {
