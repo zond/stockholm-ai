@@ -87,7 +87,7 @@ window.GameView = Backbone.View.extend({
 				}
 			}
 			if (owners.length == 1) {
-			  $('#' + selEscape(nodeId) + ' ellipse').first()[0].setAttribute('fill', players[playerId].color);
+			  $('#' + selEscape(nodeId) + ' ellipse').first()[0].setAttribute('fill', players[owners[0]].color);
 				var tspan = $('#' + selEscape(nodeId) + ' tspan').first()[0];
 			  tspan.setAttribute('fill', 'black');
 			} else {

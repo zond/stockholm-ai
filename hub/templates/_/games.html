@@ -2,7 +2,7 @@
 </table>
 <ul class="pagination">
 	<li<%= page == 1 ? ' class="disabled"' : '' %>><a href="#" class="first-page">&laquo;</a></li>
-	<% for (var i = Math.max(1, page - 2); i < Math.min(pages + 1, page + 2); i++) { %>
+	<% for (var i = Math.max(1, page - 2); i < Math.min(pages + 1, page + 3); i++) { %>
 	<li<%= page == i ? ' class="active"' : '' %>><a href="#" class="go-to-page" data-page="<%- i %>"><%- i %></a></li>
 	<% } %>
 	<li<%= page == pages ? ' class="disabled"' : '' %>><a href="#" class="last-page">&raquo;</a></li>

@@ -180,16 +180,14 @@ func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
 	for playerId, orders := range orderMap {
 		for _, order := range orders {
 			if src, found := self.Nodes[order.Src]; found {
-				if src.Units[playerId] >= order.Units {
-					if edge, found := src.Edges[order.Dst]; found {
-						src.Units[playerId] -= order.Units
-						edgeCpy := edge
-						orderCpy := order
-						playerIdCpy := playerId
-						execution = append(execution, func() {
-							edgeCpy.Units[0][playerIdCpy] += orderCpy.Units
-						})
-					}
+				if edge, found := src.Edges[order.Dst]; found {
+					toMove := common.Min(src.Units[playerId], order.Units)
+					src.Units[playerId] -= toMove
+					edgeCpy := edge
+					playerIdCpy := playerId
+					execution = append(execution, func() {
+						edgeCpy.Units[0][playerIdCpy] += toMove
+					})
 				}
 			}
 		}
@@ -213,7 +211,7 @@ func (self *State) executeGrowth(c common.Logger) {
 		if len(players) == 1 {
 			playerId := players[0]
 			units := node.Units[playerId]
-			if total < node.Size {
+			if total > 0 && total < node.Size {
 				nodeCpy := node
 				newSum := common.Min(node.Size, int(1+float64(units)*(1.0+(growthFactor*(float64(node.Size-total)/float64(node.Size))))))
 				execution = append(execution, func() {
@@ -221,14 +219,16 @@ func (self *State) executeGrowth(c common.Logger) {
 				})
 			}
 		} else if len(players) > 1 {
-			for playerId, units := range node.Units {
-				if total > node.Size {
-					playerIdCpy := playerId
-					nodeCpy := node
-					newSum := common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size))))-1))
-					execution = append(execution, func() {
-						nodeCpy.Units[playerIdCpy] = newSum
-					})
+			if total > node.Size {
+				for playerId, units := range node.Units {
+					if units > 0 {
+						playerIdCpy := playerId
+						nodeCpy := node
+						newSum := common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size)))))-1)
+						execution = append(execution, func() {
+							nodeCpy.Units[playerIdCpy] = newSum
+						})
+					}
 				}
 			}
 		}
@@ -238,7 +238,7 @@ func (self *State) executeGrowth(c common.Logger) {
 	}
 }
 
-func (self *State) executeConflicts() {
+func (self *State) executeConflicts(l common.Logger) {
 	execution := []func(){}
 	for _, node := range self.Nodes {
 		total := 0
@@ -247,7 +247,7 @@ func (self *State) executeConflicts() {
 		}
 		for playerId, units := range node.Units {
 			enemies := total - units
-			if enemies > 0 {
+			if units > 0 && enemies > 0 {
 				newSum := common.Max(0, common.Min(units-1, int(float64(units)-(float64(enemies)/5.0))))
 				playerIdCpy := playerId
 				nodeCpy := node
@@ -297,7 +297,7 @@ func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *
 	self.executeTransits(c)
 	self.executeOrders(orderMap)
 	self.executeGrowth(c)
-	self.executeConflicts()
+	self.executeConflicts(c)
 	winner = self.onlyPlayerLeft(c)
 	return
 }
