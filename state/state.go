@@ -79,7 +79,6 @@ func (self *Node) Connect(node *Node, edgeLength int) {
 func (self *Node) connectRandomly(c common.Logger, allNodes []*Node, state *State) {
 	minEdges := common.Norm(4, 2, 2, len(allNodes)-1)
 	for len(self.Edges) < minEdges || !self.allReachable(c, state) {
-		c.Printf("### hehu")
 		perm := rand.Perm(len(allNodes))
 		var randomNode *Node
 		for _, index := range perm {
