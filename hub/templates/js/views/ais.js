@@ -25,7 +25,7 @@ window.AIsView = Backbone.View.extend({
 			Losses: 0,
 			URL: $('.new-ai-url').val(),
 			IsOwner: true,
-		});
+		}, { at: 0 });
 	},
 
 	deleteAI: function(ev) {
