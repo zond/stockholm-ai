@@ -7,10 +7,13 @@ import (
 	"appengine/urlfetch"
 	"bytes"
 	"common"
+	"encoding/json"
 	"fmt"
 	ai "github.com/zond/stockholm-ai/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
 	state "github.com/zond/stockholm-ai/state"
+	"io"
+	"net/http"
 	"sort"
 	"time"
 )
@@ -73,42 +76,97 @@ type Game struct {
 }
 
 type orderResponse struct {
-	PlayerId state.PlayerId
-	Orders   state.Orders
+	DatastorePlayerId *datastore.Key
+	StatePlayerId     state.PlayerId
+	Orders            state.Orders
+	Error             error
+}
+
+type orderError struct {
+	Request      *http.Request
+	RequestBody  string
+	Response     *http.Response
+	ResponseBody string
+}
+
+func (self orderError) Error() string {
+	return fmt.Sprintf("Got %v from %v", self.Response.StatusCode, self.Request.URL)
 }
 
 func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
-	c := common.Context{Context: cont}
-	self := getGameById(c, id)
+	con := common.Context{Context: cont}
+	self := getGameById(con, id)
 	self.PlayerNames = playerNames
 	if self.Length > maxGameDuration {
 		self.State = StateFinished
-		self.Save(c)
-		c.Infof("Ended %v due to timeout", self.Id)
+		self.Save(con)
+		con.Infof("Ended %v due to timeout", self.Id)
 		return
 	}
-	if err := common.Transaction(c, func(c common.Context) (err error) {
+	errorSavers := []func(){}
+	if err := common.Transaction(con, func(c common.Context) (err error) {
 		lastTurn := GetLatestTurnByParent(c, self.Id)
 		responses := make(chan orderResponse, len(self.Players))
 		for _, playerId := range self.Players {
 			orderResp := orderResponse{
-				PlayerId: state.PlayerId(playerId.Encode()),
+				DatastorePlayerId: playerId,
+				StatePlayerId:     state.PlayerId(playerId.Encode()),
 			}
 			if foundAi := GetAIById(c, playerId); foundAi != nil {
 				go func() {
+					// Always deliver the order response
 					defer func() {
 						responses <- orderResp
 					}()
-					req := ai.OrderRequest{
-						Me:     orderResp.PlayerId,
+
+					// create a request
+					orderRequest := ai.OrderRequest{
+						Me:     orderResp.StatePlayerId,
 						State:  lastTurn.State,
 						GameId: state.GameId(self.Id.Encode()),
 					}
-					buf := &bytes.Buffer{}
-					aiCommon.MustEncodeJSON(buf, req)
+
+					// encode it into a body, and remember its string representation
+					sendBody := &bytes.Buffer{}
+					aiCommon.MustEncodeJSON(sendBody, orderRequest)
+					sendBodyString := sendBody.String()
+
+					// get a client
 					client := urlfetch.Client(c)
-					if resp, err := client.Post(foundAi.URL, "application/json; charset=UTF-8", buf); err == nil && resp.StatusCode == 200 {
-						aiCommon.MustDecodeJSON(resp.Body, &orderResp.Orders)
+
+					// send the request to the ai
+					req, err := http.NewRequest("POST", foundAi.URL, sendBody)
+					var resp *http.Response
+					if err == nil {
+						req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+						resp, err = client.Do(req)
+					}
+
+					recvBody := &bytes.Buffer{}
+					recvBodyString := ""
+					if err == nil {
+						// check what we received
+						_, err = io.Copy(recvBody, resp.Body)
+						recvBodyString = recvBody.String()
+					}
+					// if we have no other errors, but we got a non-200
+					if err == nil && resp.StatusCode != 200 {
+						err = orderError{
+							Request:      req,
+							RequestBody:  sendBodyString,
+							Response:     resp,
+							ResponseBody: recvBodyString,
+						}
+					}
+
+					// lets try to unserialize
+					if err == nil {
+						err = json.Unmarshal(recvBody.Bytes(), &orderResp.Orders)
+					}
+
+					// store the error, if any
+					if err != nil {
+						orderResp.Error = err
 					}
 				}()
 			} else {
@@ -116,20 +174,37 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 			}
 		}
 		orderMap := map[state.PlayerId]state.Orders{}
-		for i := 0; i < len(self.Players); i++ {
+		for _, _ = range self.Players {
+			// wait for the responses
 			orderResp := <-responses
-			orderMap[orderResp.PlayerId] = orderResp.Orders
+			// store it
+			orderMap[orderResp.StatePlayerId] = orderResp.Orders
+			// if we got an error
+			if orderResp.Error != nil {
+				// make sure to save it later
+				errorSavers = append(errorSavers, func() {
+					if ai := GetAIById(con, orderResp.DatastorePlayerId); ai != nil {
+						ai.AddError(con, lastTurn.Id, orderResp.Error)
+					}
+				})
+			}
 		}
+		// execute the orders
 		newTurn, winner := lastTurn.Next(c, orderMap)
+		// save the new turn
 		newTurn.Save(c, self.Id)
+		// if we got a winner, end the game and store the winner
 		if winner == nil {
 			self.State = StatePlaying
 		} else {
 			self.Winner = common.MustDecodeKey(string(*winner))
 			self.State = StateFinished
 		}
+		// increase our length with the new turn
 		self.Length += 1
+		// save us
 		self.Save(c)
+		// if we didn't end, queue the next turn
 		if winner == nil {
 			nextTurnFunc.Call(c, self.Id, playerNames)
 		}
@@ -137,9 +212,14 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	}); err != nil {
 		panic(err)
 	}
+	// run any error savers we got
+	for _, saver := range errorSavers {
+		saver()
+	}
+	// store the new stats in the players if we ended
 	if self.State == StateFinished {
 		for _, playerId := range self.Players {
-			common.Transaction(c, func(common.Context) error {
+			common.Transaction(con, func(c common.Context) error {
 				if ai := GetAIById(c, playerId); ai != nil {
 					if playerId.Equal(self.Winner) {
 						ai.Wins += 1
