@@ -1,4 +1,4 @@
-package models
+package state
 
 import (
 	common "github.com/zond/stockholm-ai/common"
@@ -48,38 +48,12 @@ type Node struct {
 	Edges map[NodeId]Edge
 }
 
-func (self *Node) reachable(c common.Logger, node *Node, nodeMap map[NodeId]*Node) bool {
-	visited := map[NodeId]bool{}
-	queue := make([]NodeId, 0, len(self.Edges))
-	for nodeId, _ := range self.Edges {
-		if nodeId == node.Id {
-			return true
-		}
-		visited[nodeId] = true
-		queue = append(queue, nodeId)
-	}
-	for len(queue) > 0 {
-		newQueue := []NodeId{}
-		for _, nodeId := range queue {
-			for edgeNodeId, _ := range nodeMap[nodeId].Edges {
-				if edgeNodeId == node.Id {
-					return true
-				}
-				if !visited[edgeNodeId] {
-					newQueue = append(newQueue, edgeNodeId)
-					visited[edgeNodeId] = true
-				}
+func (self *Node) allReachable(c common.Logger, state *State) bool {
+	for nodeId, _ := range state.Nodes {
+		if nodeId != self.Id {
+			if state.Path(self.Id, nodeId, nil) == nil {
+				return false
 			}
-		}
-		queue = newQueue
-	}
-	return false
-}
-
-func (self *Node) allReachable(c common.Logger, nodeMap map[NodeId]*Node) bool {
-	for _, node := range nodeMap {
-		if !self.reachable(c, node, nodeMap) {
-			return false
 		}
 	}
 	return true
@@ -103,9 +77,9 @@ func (self *Node) connectNode(node *Node) {
 	node.Edges[self.Id] = *here
 }
 
-func (self *Node) connect(c common.Logger, allNodes []*Node, nodeMap map[NodeId]*Node) {
+func (self *Node) connect(c common.Logger, allNodes []*Node, state *State) {
 	minEdges := common.Norm(4, 2, 2, len(allNodes)-1)
-	for len(self.Edges) < minEdges || !self.allReachable(c, nodeMap) {
+	for len(self.Edges) < minEdges || !self.allReachable(c, state) {
 		perm := rand.Perm(len(allNodes))
 		var randomNode *Node
 		for _, index := range perm {
@@ -318,6 +292,53 @@ func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *
 	return
 }
 
+func (self *State) pathHelper(dst NodeId, queue []pathStep, filter PathFilter, seen map[NodeId]bool) []NodeId {
+	var newQueue []pathStep
+	for _, step := range queue {
+		seen[step.pos] = true
+		if node, found := self.Nodes[step.pos]; found {
+			for _, edge := range node.Edges {
+				if !seen[edge.Dst] {
+					if filter == nil || filter(node) {
+						thisPath := []NodeId{}
+						for _, _ = range edge.Units {
+							thisPath = append(append(thisPath, step.path...), edge.Dst)
+						}
+						if edge.Dst == dst {
+							return thisPath
+						}
+						newQueue = append(newQueue, pathStep{
+							path: thisPath,
+							pos:  edge.Dst,
+						})
+					}
+				}
+			}
+		}
+	}
+	if len(newQueue) > 0 {
+		return self.pathHelper(dst, newQueue, filter, seen)
+	}
+	return nil
+}
+
+type PathFilter func(node *Node) bool
+
+type pathStep struct {
+	path []NodeId
+	pos  NodeId
+}
+
+func (self *State) Path(src, dst NodeId, filter PathFilter) []NodeId {
+	queue := []pathStep{
+		pathStep{
+			path: nil,
+			pos:  src,
+		},
+	}
+	return self.pathHelper(dst, queue, filter, map[NodeId]bool{})
+}
+
 /*
 RandomState creates a random state for the provided players.
 */
@@ -331,7 +352,7 @@ func RandomState(c common.Logger, players []PlayerId) (result State) {
 		allNodes = append(allNodes, node)
 	}
 	for _, node := range allNodes {
-		node.connect(c, allNodes, result.Nodes)
+		node.connect(c, allNodes, &result)
 	}
 	perm := rand.Perm(len(allNodes))
 	for index, playerId := range players {
