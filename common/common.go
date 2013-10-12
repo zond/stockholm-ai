@@ -69,6 +69,14 @@ func MustUnmarshalJSON(b []byte, i interface{}) {
 	}
 }
 
+func TryParseInt(s string, de int) (result int) {
+	var err error
+	if result, err = strconv.Atoi(s); err != nil {
+		result = de
+	}
+	return
+}
+
 func MustParseFloat64(s string) (result float64) {
 	var err error
 	if result, err = strconv.ParseFloat(s, 64); err != nil {
