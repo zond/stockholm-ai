@@ -40,9 +40,9 @@ window.AIsView = Backbone.View.extend({
 		that.collection.each(function(ai) {
 		  var tr = '<tr><td>' + ai.get('Name') + '</td><td>' + ai.get('URL') + '</td><td>' + ai.get('Games') + ' games</td><td>' + ai.get('Wins') + ' wins</td><td>' + ai.get('Losses') + ' losses</td>';
 		  if (ai.get('IsOwner')) {
-			  tr += '<td><button data-id="' + ai.get('Id') + '" class="btn btn-xs delete-button">Delete</button></a></td>'
+			  tr += '<td><a href="/ais/' + ai.get('Id') + '/errors" class="navigate">Errors<a></td><td><button data-id="' + ai.get('Id') + '" class="btn btn-xs delete-button">Delete</button></a></td>'
 			} else {
-			  tr += '<td></td>'
+			  tr += '<td></td><td></td>'
 			}
 			that.$('table').append(tr);
 		});

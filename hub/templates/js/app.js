@@ -55,9 +55,14 @@ $(window).load(function() {
 		routes: {
 			"": "about",
 			"ais": "ais",
+			"ais/:id/errors": "showAiErrors",
 			"games": "games",
 			"games/:id": "showGame",
 			"*all": "about",
+		},
+
+		showAiErrors: function(id) {
+		  this.render(new AIErrorsView({ id: id }));
 		},
 
 		showGame: function(id) {
