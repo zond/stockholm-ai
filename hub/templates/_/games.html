@@ -1,5 +1,12 @@
 <table class="table table-striped table-hover table-condensed">
 </table>
+<ul class="pagination">
+	<li<%= page == 1 ? ' class="disabled"' : '' %>><a href="#" class="first-page">&laquo;</a></li>
+	<% for (var i = Math.max(1, page - 2); i < Math.min(pages + 1, page + 2); i++) { %>
+	<li<%= page == i ? ' class="active"' : '' %>><a href="#" class="go-to-page" data-page="<%- i %>"><%- i %></a></li>
+	<% } %>
+	<li<%= page == pages ? ' class="disabled"' : '' %>><a href="#" class="last-page">&raquo;</a></li>
+</ul>
 <div class="add-game">
 	<form class="form-inline" role="form">
 		<div class="form-group">

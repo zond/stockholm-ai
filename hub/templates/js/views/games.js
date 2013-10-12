@@ -4,10 +4,13 @@ window.GamesView = Backbone.View.extend({
 
 	events: {
 	  "click .create-button": 'createGame',
+		"click .go-to-page": 'goToPage',
+		"click .last-page": 'lastPage',
+		"click .first-page": 'firstPage',
 	},
 
 	initialize: function() {
-	  this.collection = new Games();
+	  this.collection = new Games([], {});
 		this.listenTo(this.collection, 'sync', this.render);
 		this.listenTo(this.collection, 'reset', this.render);
 		this.listenTo(this.collection, 'add', this.render);
@@ -19,6 +22,24 @@ window.GamesView = Backbone.View.extend({
 		this.listenTo(this.ais, 'add', this.render);
 		this.listenTo(this.ais, 'remove', this.render);
 		this.ais.fetch({ reset: true });
+	},
+
+	firstPage: function(ev) {
+	  ev.preventDefault();
+		this.collection.page = 1;
+		this.collection.fetch({ reset: true });
+	},
+
+	lastPage: function(ev) {
+	  ev.preventDefault();
+		this.collection.page = this.collection.pages;
+		this.collection.fetch({ reset: true });
+	},
+
+  goToPage: function(ev) {
+	  ev.preventDefault();
+		this.collection.page = $(ev.target).attr('data-page');
+		this.collection.fetch({ reset: true });
 	},
 
 	createGame: function(ev) {
@@ -35,7 +56,11 @@ window.GamesView = Backbone.View.extend({
 
   render: function() {
 		var that = this;
-    that.$el.html(that.template({}));
+    that.$el.html(that.template({
+		  page: that.collection.page,
+			limit: that.collection.limit,
+			pages: that.collection.pages,
+		}));
 		that.collection.each(function(game) {
 			that.$('table').append('<tr><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('PlayerNames') + '</a></td><td>' + (game.get('Winner') != null ? '<a class="navigate" href="/games/' + game.get('Id') + '">Winner: ' + game.get('WinnerName') + '</a>' : '') + '</td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('State') + '</a></td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('Length') + ' turns</a></td></tr>');
 		});
