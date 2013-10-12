@@ -75,14 +75,23 @@ window.GameView = Backbone.View.extend({
 		  var node = state.Nodes[nodeId];
 		  var label = $('#' + selEscape(nodeId) + ' text');
 			label.empty();
+			var owners = [];
       for (var playerId in node.Units) {
 			  if (node.Units[playerId] > 0) {
+				  owners.push(playerId);
 					var tspan = document.createElementNS(SVG, 'tspan');
 					tspan.setAttribute('fill', players[playerId].color);
 					tspan.setAttribute('font-weight', 'bold');
 					tspan.textContent = '' + node.Units[playerId] + ' ';
 					label[0].appendChild(tspan);
 				}
+			}
+			if (owners.length == 1) {
+			  $('#' + selEscape(nodeId) + ' ellipse').first()[0].setAttribute('fill', players[playerId].color);
+				var tspan = $('#' + selEscape(nodeId) + ' tspan').first()[0];
+			  tspan.setAttribute('fill', 'black');
+			} else {
+			  $('#' + selEscape(nodeId) + ' ellipse').first()[0].setAttribute('fill', 'white');
 			}
 			for (var dstId in node.Edges) {
 			  var edge = node.Edges[dstId];
@@ -117,6 +126,7 @@ window.GameView = Backbone.View.extend({
 
 	prepareMap: function() {
 	  var g = $('svg #graph0')[0];
+		$(g).find('polygon')[0].setAttribute('fill', $('body').css('background-color'));
 		var edgeLabels = document.createElementNS(SVG, 'g');
 		edgeLabels.setAttribute('id', 'edgeLabels');
 		g.appendChild(edgeLabels);
