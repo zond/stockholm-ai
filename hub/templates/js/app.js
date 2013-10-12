@@ -11,22 +11,14 @@ function uniqueColors(numColors) {
 	  return ["#ff0000"];
 	}
 	var result = [];
-	var sat = 0.8;
+	var sat = 0.50;
 	for (var i = 0; i < numColors; i++) {
 	  var hue = 360.0 * i / numColors;
-		if (i % 2 == 0) {
-		  result.push(tinycolor({
-			  h: hue,
-				s: sat,
-				v: 0.9,
-			}).toHexString());			
-		} else {
-		  result.push(tinycolor({
-			  h: hue,
-				s: sat,
-				v: 0.7,
-			}).toHexString());
-		}
+		result.push(tinycolor({
+			h: hue,
+			s: sat,
+			v: 0.7,
+		}).toHexString());
 	}
 	return result;
 }

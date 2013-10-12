@@ -324,6 +324,7 @@ func GetGameById(c common.Context, id *datastore.Key) (result *Game) {
 func (self *Game) Save(c common.Context) *Game {
 	var err error
 	if self.Id == nil {
+		self.setPlayerNames(c)
 		err = common.Transaction(c, func(c common.Context) (err error) {
 			self.CreatedAt = time.Now()
 			self.State = StateCreated
@@ -341,7 +342,6 @@ func (self *Game) Save(c common.Context) *Game {
 			}
 			turn.Save(c, self.Id)
 			self.Turns = Turns{*turn}
-			self.setPlayerNames(c)
 			nextTurnFunc.Call(c, self.Id, self.PlayerNames)
 			return nil
 		})
