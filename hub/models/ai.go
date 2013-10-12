@@ -55,7 +55,7 @@ func (self AIErrors) Len() int {
 	return len(self)
 }
 
-func (self AIErrors) Less(i, j int) bool {
+func (self AIErrors) Less(j, i int) bool {
 	return self[i].CreatedAt.Before(self[j].CreatedAt)
 }
 
@@ -111,7 +111,7 @@ func (self *AI) AddError(c common.Context, turnId *datastore.Key, err error) {
 }
 
 func (self *AI) findErrors(c common.Context) (result AIErrors) {
-	_, err := datastore.NewQuery(AIErrorKind).Ancestor(self.Id).GetAll(c, &result)
+	_, err := datastore.NewQuery(AIErrorKind).Ancestor(self.Id).Order("-CreatedAt").Limit(50).GetAll(c, &result)
 	common.AssertOkError(err)
 	if result == nil {
 		result = AIErrors{}
