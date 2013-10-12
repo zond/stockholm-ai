@@ -14,13 +14,12 @@ import (
 	state "github.com/zond/stockholm-ai/state"
 	"io"
 	"net/http"
-	"sort"
 	"time"
 )
 
 const (
 	GameKind        = "Game"
-	AllGamesKey     = "Games{All}"
+	allGamesKey     = "Games{All}"
 	maxGameDuration = 100
 )
 
@@ -32,6 +31,10 @@ func init() {
 
 func gameKeyForId(k interface{}) string {
 	return fmt.Sprintf("Game{Id:%v}", k)
+}
+
+func gamePageKey(limit, offset int) string {
+	return fmt.Sprintf("GamePage{limit:%v,offset:%v}", limit, offset)
 }
 
 type GameState string
@@ -259,24 +262,34 @@ func (self *Game) process(c common.Context) *Game {
 	return self
 }
 
-func findAllGames(c common.Context) (result Games) {
-	ids, err := datastore.NewQuery(GameKind).GetAll(c, &result)
+type GamePage struct {
+	Content Games
+	Total   int
+}
+
+func findGamePage(c common.Context, offset, limit int) (result GamePage) {
+	query := datastore.NewQuery(GameKind)
+	var err error
+	result.Total, err = query.Count(c)
+	common.AssertOkError(err)
+	var ids []*datastore.Key
+	ids, err = query.Limit(limit).Offset(offset).Order("-CreatedAt").GetAll(c, &result.Content)
 	common.AssertOkError(err)
 	for index, id := range ids {
-		result[index].Id = id
+		result.Content[index].Id = id
 	}
-	if result == nil {
-		result = Games{}
+	if result.Content == nil {
+		result.Content = Games{}
 	}
 	return
 }
 
-func GetAllGames(c common.Context) (result Games) {
-	common.Memoize(c, AllGamesKey, &result, func() interface{} {
-		return findAllGames(c)
+func GetGamePage(c common.Context, offset, limit int) (result GamePage) {
+	common.Memoize2(c, allGamesKey, gamePageKey(limit, offset), &result, func() interface{} {
+		return findGamePage(c, offset, limit)
 	})
-	sort.Sort(result)
-	return result.process(c)
+	result.Content.process(c)
+	return result
 }
 
 func findGameById(c common.Context, id *datastore.Key) *Game {
@@ -347,6 +360,6 @@ func (self *Game) Save(c common.Context) *Game {
 		_, err = datastore.Put(c, self.Id, self)
 	}
 	common.AssertOkError(err)
-	common.MemDel(c, AllGamesKey, gameKeyForId(self.Id))
+	common.MemDel(c, allGamesKey, gameKeyForId(self.Id))
 	return self.process(c)
 }
