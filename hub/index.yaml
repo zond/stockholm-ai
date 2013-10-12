@@ -10,6 +10,12 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: AIError
+  ancestor: yes
+  properties:
+  - name: CreatedAt
+    direction: desc
+
 - kind: Turn
   ancestor: yes
   properties:
