@@ -10,6 +10,7 @@ import (
 	ai "github.com/zond/stockholm-ai/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
 	randomizerAi "github.com/zond/stockholm-ai/randomizer/ai"
+	simpletonAi "github.com/zond/stockholm-ai/simpleton/ai"
 	"io"
 	"models"
 	"net/http"
@@ -260,6 +261,7 @@ func init() {
 	aisRouter.Methods("POST").HandlerFunc(handler(createAI))
 
 	router.Path("/examples/randomizer").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, randomizerAi.Randomizer{}))
+	router.Path("/examples/simpleton").Methods("POST").Handler(ai.HTTPHandlerFunc(common.GAELoggerFactory, simpletonAi.Simpleton{}))
 
 	handleStatic(router, "static")
 
