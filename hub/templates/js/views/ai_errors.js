@@ -24,6 +24,12 @@ window.AIErrorsView = Backbone.View.extend({
 				body: '<pre>' + err.get('ErrorDetail1') + '</pre><pre>' + err.get('ErrorDetail2') + '</pre>',				
 			}));
 		});
+		if (that.collection.length == 0) {
+		  that.$('#accordion').append(that.collapseTemplate({
+			  title: 'No errors found',
+				body: 'No, really',
+			}));
+		}
 		return that;
 	},
 
