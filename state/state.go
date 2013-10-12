@@ -343,9 +343,9 @@ func (self *State) Path(src, dst NodeId, filter PathFilter) (result []NodeId) {
 			// for each edge from the node
 			for _, edge := range node.Edges {
 				// if we either haven't been where this edge leads before, or we would get there along a shorter path this time (*1)
-				if lastPathHere, found := paths[edge.Dst]; !found || len(step.path)+len(edge.Units) < len(lastPathHere) {
+				if lastPathHere, found := paths[edge.Dst]; !found || len(step.path)+len(edge.Units)+1 < len(lastPathHere) {
 					// if we either haven't found dst yet, or if following this path is shorter than where we found dst
-					if best == nil || len(step.path)+len(edge.Units) < len(best) {
+					if best == nil || len(step.path)+len(edge.Units)+1 < len(best) {
 						// if we aren't filtering nodes, or this node matches the filter
 						if filter == nil || filter(node) {
 							// make a new path that is the path here + this node + the edge we want to follow
@@ -356,6 +356,10 @@ func (self *State) Path(src, dst NodeId, filter PathFilter) (result []NodeId) {
 							thisPath[len(step.path)] = edge.Dst
 							// remember that this is the best way so far (guaranteed by *1)
 							paths[edge.Dst] = thisPath
+							// if this path leads to dst
+							if edge.Dst == dst {
+								best = thisPath
+							}
 							// queue up following this path further
 							queue = append(queue, pathStep{
 								path: thisPath,
