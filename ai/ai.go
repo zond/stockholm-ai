@@ -32,6 +32,13 @@ HTTPHandlerFunc returns an http.HandlerFunc to use when hosting an AI.
 */
 func HTTPHandlerFunc(lf common.LoggerFactory, ai AI) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger := lf(r)
+		defer func() {
+			if e := recover(); e != nil {
+				w.WriteHeader(500)
+				logger.Printf("Error delivering orders: %v", e)
+			}
+		}()
 		var req OrderRequest
 		common.MustDecodeJSON(r.Body, &req)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
