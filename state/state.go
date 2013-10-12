@@ -59,8 +59,7 @@ func (self *Node) allReachable(c common.Logger, state *State) bool {
 	return true
 }
 
-func (self *Node) connectNode(node *Node) {
-	edgeLength := common.Norm(3, 1, 1, 5)
+func (self *Node) Connect(node *Node, edgeLength int) {
 	away := &Edge{
 		Src:   self.Id,
 		Dst:   node.Id,
@@ -77,9 +76,10 @@ func (self *Node) connectNode(node *Node) {
 	node.Edges[self.Id] = *here
 }
 
-func (self *Node) connect(c common.Logger, allNodes []*Node, state *State) {
+func (self *Node) connectRandomly(c common.Logger, allNodes []*Node, state *State) {
 	minEdges := common.Norm(4, 2, 2, len(allNodes)-1)
 	for len(self.Edges) < minEdges || !self.allReachable(c, state) {
+		c.Printf("### hehu")
 		perm := rand.Perm(len(allNodes))
 		var randomNode *Node
 		for _, index := range perm {
@@ -91,22 +91,33 @@ func (self *Node) connect(c common.Logger, allNodes []*Node, state *State) {
 				}
 			}
 		}
-		self.connectNode(randomNode)
+		self.Connect(randomNode, common.Norm(3, 1, 1, 5))
 		minEdges--
 	}
+}
+
+/*
+NewNode returns a node named id with size.
+*/
+func NewNode(id NodeId, size int) *Node {
+	return &Node{
+		Size:  size,
+		Id:    id,
+		Units: make(map[PlayerId]int),
+		Edges: make(map[NodeId]Edge),
+	}
+}
+
+func (self *State) Add(n *Node) *State {
+	self.Nodes[n.Id] = n
+	return self
 }
 
 /*
 RandomNode returns a random node without connections.
 */
 func RandomNode() (result *Node) {
-	result = &Node{
-		Size:  common.Norm(50, 25, 10, 100),
-		Id:    NodeId(common.RandomString(16)),
-		Units: make(map[PlayerId]int),
-		Edges: make(map[NodeId]Edge),
-	}
-	return
+	return NewNode(NodeId(common.RandomString(16)), common.Norm(50, 25, 10, 100))
 }
 
 /*
@@ -292,36 +303,6 @@ func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *
 	return
 }
 
-func (self *State) pathHelper(dst NodeId, queue []pathStep, filter PathFilter, seen map[NodeId]bool) []NodeId {
-	var newQueue []pathStep
-	for _, step := range queue {
-		seen[step.pos] = true
-		if node, found := self.Nodes[step.pos]; found {
-			for _, edge := range node.Edges {
-				if !seen[edge.Dst] {
-					if filter == nil || filter(node) {
-						thisPath := []NodeId{}
-						for _, _ = range edge.Units {
-							thisPath = append(append(thisPath, step.path...), edge.Dst)
-						}
-						if edge.Dst == dst {
-							return thisPath
-						}
-						newQueue = append(newQueue, pathStep{
-							path: thisPath,
-							pos:  edge.Dst,
-						})
-					}
-				}
-			}
-		}
-	}
-	if len(newQueue) > 0 {
-		return self.pathHelper(dst, newQueue, filter, seen)
-	}
-	return nil
-}
-
 type PathFilter func(node *Node) bool
 
 type pathStep struct {
@@ -329,21 +310,57 @@ type pathStep struct {
 	pos  NodeId
 }
 
-func (self *State) Path(src, dst NodeId, filter PathFilter) []NodeId {
+func (self *State) Path(src, dst NodeId, filter PathFilter) (result []NodeId) {
 	queue := []pathStep{
 		pathStep{
 			path: nil,
 			pos:  src,
 		},
 	}
-	return self.pathHelper(dst, queue, filter, map[NodeId]bool{})
+	seen := map[NodeId]bool{}
+	step := pathStep{}
+	for len(queue) > 0 {
+		step = queue[0]
+		queue = queue[1:]
+		if !seen[step.pos] {
+			if node, found := self.Nodes[step.pos]; found {
+				for _, edge := range node.Edges {
+					if result == nil || len(step.path)+len(edge.Units) < len(result) {
+						if filter == nil || filter(node) {
+							thisPath := append([]NodeId{}, step.path...)
+							thisPath = append(thisPath, edge.Dst)
+							for _, _ = range edge.Units {
+								thisPath = append(thisPath, edge.Dst)
+							}
+							if edge.Dst == dst && (result == nil || len(thisPath) < len(result)) {
+								result = thisPath
+							} else {
+								queue = append(queue, pathStep{
+									path: thisPath,
+									pos:  edge.Dst,
+								})
+							}
+						}
+					}
+				}
+			}
+			seen[step.pos] = true
+		}
+	}
+	return
+}
+
+func NewState() *State {
+	return &State{
+		Nodes: map[NodeId]*Node{},
+	}
 }
 
 /*
 RandomState creates a random state for the provided players.
 */
-func RandomState(c common.Logger, players []PlayerId) (result State) {
-	result.Nodes = map[NodeId]*Node{}
+func RandomState(c common.Logger, players []PlayerId) (result *State) {
+	result = NewState()
 	size := common.Norm(len(players)*6, len(players), len(players)*4, len(players)*10)
 	allNodes := make([]*Node, 0, size)
 	for i := 0; i < size; i++ {
@@ -352,7 +369,7 @@ func RandomState(c common.Logger, players []PlayerId) (result State) {
 		allNodes = append(allNodes, node)
 	}
 	for _, node := range allNodes {
-		node.connect(c, allNodes, &result)
+		node.connectRandomly(c, allNodes, result)
 	}
 	perm := rand.Perm(len(allNodes))
 	for index, playerId := range players {

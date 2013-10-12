@@ -49,8 +49,8 @@ func (self Turns) process(c common.Context) Turns {
 type Turn struct {
 	Id              *datastore.Key
 	Ordinal         int
-	SerializedState []byte      `json:"-"`
-	State           state.State `datastore:"-"`
+	SerializedState []byte       `json:"-"`
+	State           *state.State `datastore:"-"`
 	CreatedAt       time.Time
 }
 
@@ -64,7 +64,8 @@ func (self *Turn) Next(c common.Context, orderMap map[state.PlayerId]state.Order
 
 func (self *Turn) process(c common.Context) *Turn {
 	if len(self.SerializedState) > 0 {
-		common.MustUnmarshal(self.SerializedState, &self.State)
+		self.State = &state.State{}
+		common.MustUnmarshal(self.SerializedState, self.State)
 	}
 	return self
 }

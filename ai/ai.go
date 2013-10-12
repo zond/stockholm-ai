@@ -16,7 +16,7 @@ type OrderRequest struct {
 	// GameId is the unique id of the game, if the AI wants to keep state between order requests.
 	GameId state.GameId
 	// State contains all the state of the game for the turn the order request refers to.
-	State state.State
+	State *state.State
 }
 
 /*
@@ -24,7 +24,7 @@ AI has to be implemented by any player of the game.
 */
 type AI interface {
 	// Orders returns the orders the AI playing me wants to issue at the turn described by s.
-	Orders(logger common.Logger, me state.PlayerId, s state.State) state.Orders
+	Orders(logger common.Logger, me state.PlayerId, s *state.State) state.Orders
 }
 
 /*
