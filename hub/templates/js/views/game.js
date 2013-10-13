@@ -119,7 +119,7 @@ window.GameView = Backbone.View.extend({
 					}
 				}
 			}
-			$('#' + selEscape(nodeId) + ' title').text('');
+			$('#' + selEscape(nodeId) + ' title').text('No change');
 		}
 		for (var nodeId in state.Changes) {
 		  var changes = state.Changes[nodeId];
