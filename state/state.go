@@ -229,8 +229,10 @@ func (self *State) executeGrowth(c common.Logger) {
 			total += units
 		}
 		players := make([]PlayerId, 0, len(node.Units))
-		for playerId, _ := range node.Units {
-			players = append(players, playerId)
+		for playerId, units := range node.Units {
+			if units > 0 {
+				players = append(players, playerId)
+			}
 		}
 		if len(players) == 1 {
 			playerId := players[0]
