@@ -119,6 +119,15 @@ window.GameView = Backbone.View.extend({
 					}
 				}
 			}
+			$('#' + selEscape(nodeId) + ' title').text('');
+		}
+		for (var nodeId in state.Changes) {
+		  var changes = state.Changes[nodeId];
+			var messages = [];
+      _.each(changes, function(change) {
+			  messages.push(players[change.PlayerId].name + ': ' + change.Units + ' (' + change.Reason + ')');
+			});
+		  $('#' + selEscape(nodeId) + ' title').text(messages.join('\n'));
 		}
 		var parentNode = that.$('svg').parent()[0];
 		parentNode.innerHTML = parentNode.innerHTML;
@@ -127,6 +136,7 @@ window.GameView = Backbone.View.extend({
 	prepareMap: function() {
 	  var g = $('svg #graph0')[0];
 		$(g).find('polygon')[0].setAttribute('fill', $('body').css('background-color'));
+		$('svg #graph0 > title').text('Nodes provide tooltips about what happened between this and last turn.');
 		var edgeLabels = document.createElementNS(SVG, 'g');
 		edgeLabels.setAttribute('id', 'edgeLabels');
 		g.appendChild(edgeLabels);

@@ -138,12 +138,24 @@ Orders are given by AIs to move around their units.
 */
 type Orders []Order
 
+type ChangeReason string
+
+type Change struct {
+	Units    int
+	PlayerId PlayerId
+	Reason   ChangeReason
+}
+
+type Changes []Change
+
 /*
 State completely describes a single turn of the game.
 */
 type State struct {
 	// Nodes are the nodes in the game.
 	Nodes map[NodeId]*Node
+	// Changes are the changes and reasons since last turn.
+	Changes map[NodeId]Changes
 }
 
 func (self *State) executeTransits(logger common.Logger) {
@@ -152,19 +164,26 @@ func (self *State) executeTransits(logger common.Logger) {
 		for _, edge := range node.Edges {
 			for index, units := range edge.Units {
 				for playerId, num := range units {
-					numCpy := num
-					edgeCpy := edge
-					playerIdCpy := playerId
-					indexCpy := index
-					units[playerId] = 0
-					if index == len(edge.Units)-1 {
-						execution = append(execution, func() {
-							self.Nodes[edgeCpy.Dst].Units[playerIdCpy] += numCpy
-						})
-					} else {
-						execution = append(execution, func() {
-							edgeCpy.Units[indexCpy+1][playerIdCpy] += numCpy
-						})
+					if num > 0 {
+						numCpy := num
+						edgeCpy := edge
+						playerIdCpy := playerId
+						indexCpy := index
+						units[playerId] = 0
+						if index == len(edge.Units)-1 {
+							execution = append(execution, func() {
+								self.Nodes[edgeCpy.Dst].Units[playerIdCpy] += numCpy
+								self.Changes[edgeCpy.Dst] = append(self.Changes[edgeCpy.Dst], Change{
+									Units:    numCpy,
+									PlayerId: playerIdCpy,
+									Reason:   ChangeReason("Incoming"),
+								})
+							})
+						} else {
+							execution = append(execution, func() {
+								edgeCpy.Units[indexCpy+1][playerIdCpy] += numCpy
+							})
+						}
 					}
 				}
 			}
@@ -187,6 +206,11 @@ func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
 					playerIdCpy := playerId
 					execution = append(execution, func() {
 						edgeCpy.Units[0][playerIdCpy] += toMove
+						self.Changes[edgeCpy.Src] = append(self.Changes[edgeCpy.Src], Change{
+							Units:    -toMove,
+							PlayerId: playerIdCpy,
+							Reason:   ChangeReason("Orders"),
+						})
 					})
 				}
 			}
@@ -214,9 +238,16 @@ func (self *State) executeGrowth(c common.Logger) {
 			if total > 0 && total < node.Size {
 				nodeCpy := node
 				newSum := common.Min(node.Size, int(1+float64(units)*(1.0+(growthFactor*(float64(node.Size-total)/float64(node.Size))))))
-				execution = append(execution, func() {
-					nodeCpy.Units[playerId] = newSum
-				})
+				if newSum > units {
+					execution = append(execution, func() {
+						nodeCpy.Units[playerId] = newSum
+						self.Changes[nodeCpy.Id] = append(self.Changes[nodeCpy.Id], Change{
+							Units:    newSum - units,
+							PlayerId: playerId,
+							Reason:   ChangeReason("Growth"),
+						})
+					})
+				}
 			}
 		} else if len(players) > 1 {
 			if total > node.Size {
@@ -225,9 +256,17 @@ func (self *State) executeGrowth(c common.Logger) {
 						playerIdCpy := playerId
 						nodeCpy := node
 						newSum := common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size)))))-1)
-						execution = append(execution, func() {
-							nodeCpy.Units[playerIdCpy] = newSum
-						})
+						if newSum < units {
+							oldSum := units
+							execution = append(execution, func() {
+								nodeCpy.Units[playerIdCpy] = newSum
+								self.Changes[nodeCpy.Id] = append(self.Changes[nodeCpy.Id], Change{
+									Units:    newSum - oldSum,
+									PlayerId: playerIdCpy,
+									Reason:   ChangeReason("Starvation"),
+								})
+							})
+						}
 					}
 				}
 			}
@@ -251,9 +290,17 @@ func (self *State) executeConflicts(l common.Logger) {
 				newSum := common.Max(0, common.Min(units-1, int(float64(units)-(float64(enemies)/5.0))))
 				playerIdCpy := playerId
 				nodeCpy := node
-				execution = append(execution, func() {
-					nodeCpy.Units[playerIdCpy] = newSum
-				})
+				if newSum < units {
+					oldSum := units
+					execution = append(execution, func() {
+						nodeCpy.Units[playerIdCpy] = newSum
+						self.Changes[nodeCpy.Id] = append(self.Changes[nodeCpy.Id], Change{
+							Units:    newSum - oldSum,
+							PlayerId: playerIdCpy,
+							Reason:   ChangeReason("Conflict"),
+						})
+					})
+				}
 			}
 		}
 	}
@@ -294,6 +341,7 @@ func (self *State) onlyPlayerLeft(c common.Logger) *PlayerId {
 Next changes this state into the next state, subject to the provided orders.
 */
 func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *PlayerId) {
+	self.Changes = map[NodeId]Changes{}
 	self.executeTransits(c)
 	self.executeOrders(orderMap)
 	self.executeGrowth(c)
@@ -375,7 +423,8 @@ func (self *State) Path(src, dst NodeId, filter PathFilter) (result []NodeId) {
 
 func NewState() *State {
 	return &State{
-		Nodes: map[NodeId]*Node{},
+		Nodes:   map[NodeId]*Node{},
+		Changes: map[NodeId]Changes{},
 	}
 }
 
