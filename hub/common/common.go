@@ -65,8 +65,25 @@ func (self Context) Authenticated() bool {
 	return false
 }
 
+func SetContentType(w http.ResponseWriter, t string, cache bool) {
+	w.Header().Set("Content-Type", t)
+	if cache {
+		if !appengine.IsDevAppServer() {
+			w.Header().Set("Cache-Control", "public, max-age=864000")
+		}
+	} else {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+	}
+}
+
+func (self Context) SetContentType(t string, cache bool) {
+	SetContentType(self.Resp, t, cache)
+}
+
 func (self Context) RenderJSON(i interface{}) {
-	self.Resp.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	self.SetContentType("application/json; charset=UTF-8", false)
 	common.MustEncodeJSON(self.Resp, i)
 }
 

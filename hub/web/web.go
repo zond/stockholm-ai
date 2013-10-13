@@ -30,10 +30,7 @@ var jsTemplates = template.Must(template.New("jsTemplates").ParseGlob("templates
 var cssTemplates = template.Must(template.New("cssTemplates").ParseGlob("templates/css/*.css"))
 
 func allCSS(c common.Context) {
-	if !appengine.IsDevAppServer() {
-		c.Resp.Header().Set("Cache-Control", "public, max-age=864000")
-	}
-	c.Resp.Header().Set("Content-Type", "text/css; charset=UTF-8")
+	c.SetContentType("text/css; charset=UTF-8", true)
 	renderText(c, cssTemplates, "bootstrap.min.css")
 	renderText(c, cssTemplates, "bootstrap-theme.min.css")
 	renderText(c, cssTemplates, "bootstrap-multiselect.css")
@@ -70,10 +67,7 @@ func render_Templates(c common.Context) {
 }
 
 func allJS(c common.Context) {
-	if !appengine.IsDevAppServer() {
-		c.Resp.Header().Set("Cache-Control", "public, max-age=864000")
-	}
-	c.Resp.Header().Set("Content-Type", "application/javascript; charset=UTF-8")
+	c.SetContentType("application/javascript; charset=UTF-8", true)
 	renderText(c, jsTemplates, "jquery-2.0.3.min.js")
 	renderText(c, jsTemplates, "underscore-min.js")
 	renderText(c, jsTemplates, "backbone-min.js")
@@ -109,10 +103,7 @@ func wantsHTML(r *http.Request, m *mux.RouteMatch) bool {
 }
 
 func index(c common.Context) {
-	if !appengine.IsDevAppServer() {
-		c.Resp.Header().Set("Cache-Control", "public, max-age=864000")
-	}
-	c.Resp.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	c.SetContentType("text/html; charset=UTF-8", false)
 	renderText(c, htmlTemplates, "index.html")
 }
 
@@ -218,21 +209,20 @@ func handleStatic(router *mux.Router, dir string) {
 		router.MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
 			return strings.HasSuffix(r.URL.Path, cpy)
 		}).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Cache-Control", "public, max-age=864000")
 			if strings.HasSuffix(r.URL.Path, ".css") {
-				w.Header().Set("Content-Type", "text/css; charset=UTF-8")
+				common.SetContentType(w, "text/css; charset=UTF-8", true)
 			} else if strings.HasSuffix(r.URL.Path, ".js") {
-				w.Header().Set("Content-Type", "application/javascript; charset=UTF-8")
+				common.SetContentType(w, "application/javascript; charset=UTF-8", true)
 			} else if strings.HasSuffix(r.URL.Path, ".png") {
-				w.Header().Set("Content-Type", "image/png")
+				common.SetContentType(w, "image/png", true)
 			} else if strings.HasSuffix(r.URL.Path, ".gif") {
-				w.Header().Set("Content-Type", "image/gif")
+				common.SetContentType(w, "image/gif", true)
 			} else if strings.HasSuffix(r.URL.Path, ".woff") {
-				w.Header().Set("Content-Type", "application/font-woff")
+				common.SetContentType(w, "application/font-woff", true)
 			} else if strings.HasSuffix(r.URL.Path, ".ttf") {
-				w.Header().Set("Content-Type", "font/truetype")
+				common.SetContentType(w, "font/truetype", true)
 			} else {
-				w.Header().Set("Content-Type", "application/octet-stream")
+				common.SetContentType(w, "application/octet-stream", true)
 			}
 			if in, err := os.Open(filepath.Join("static", cpy)); err != nil {
 				w.WriteHeader(500)
