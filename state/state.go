@@ -204,14 +204,16 @@ func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
 					src.Units[playerId] -= toMove
 					edgeCpy := edge
 					playerIdCpy := playerId
-					execution = append(execution, func() {
-						edgeCpy.Units[0][playerIdCpy] += toMove
-						self.Changes[edgeCpy.Src] = append(self.Changes[edgeCpy.Src], Change{
-							Units:    -toMove,
-							PlayerId: playerIdCpy,
-							Reason:   ChangeReason("Orders"),
+					if toMove > 0 {
+						execution = append(execution, func() {
+							edgeCpy.Units[0][playerIdCpy] += toMove
+							self.Changes[edgeCpy.Src] = append(self.Changes[edgeCpy.Src], Change{
+								Units:    -toMove,
+								PlayerId: playerIdCpy,
+								Reason:   ChangeReason("Orders"),
+							})
 						})
-					})
+					}
 				}
 			}
 		}
