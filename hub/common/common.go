@@ -67,6 +67,7 @@ func (self Context) Authenticated() bool {
 
 func SetContentType(w http.ResponseWriter, t string, cache bool) {
 	w.Header().Set("Content-Type", t)
+	w.Header().Set("Vary", "Accept")
 	if cache {
 		if !appengine.IsDevAppServer() {
 			w.Header().Set("Cache-Control", "public, max-age=864000")
