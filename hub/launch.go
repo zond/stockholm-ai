@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -29,4 +30,14 @@ func main() {
 	link(filepath.Join(filepath.Dir(dir), "github.com"), filepath.Join(dir, "deps", "src", "github.com"))
 	link(filepath.Join(filepath.Dir(dir), "code.google.com"), filepath.Join(dir, "deps", "src", "code.google.com"))
 	link(filepath.Dir(dir), filepath.Join(filepath.Dir(dir), "github.com", "zond", "stockholm-ai"))
+	if err := os.Setenv("GOPATH", filepath.Join(dir, "deps")); err != nil {
+		panic(err)
+	}
+	cmd := exec.Command("dev_appserver.py", dir)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		panic(err)
+	}
 }
