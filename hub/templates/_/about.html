@@ -67,6 +67,9 @@ git clone https://github.com/zond/stockholm-ai.git
 			<p>
 			Start the local development server with the already-prepared GOPATH directory properly set by using <code>dev_appserver.py</code> from the <a href="https://developers.google.com/appengine/">Google App Engine</a> installation:
 			</p>
+			<p>
+			Don't forget to <strong>Sign in</strong> to your local server, so that it allows you to create AIs and games!
+			</p>
 			<a name="creating"></a>
 <pre>
 env GOPATH=$(pwd)/stockholm-ai/GOPATH dev_appserver.py stockholm-ai/hub
@@ -94,7 +97,7 @@ env GOPATH=$(pwd)/stockholm-ai/GOPATH dev_appserver.py stockholm-ai/hub
 			To quickly get a feel for what you can do with an AI, you can just edit (for example) the <code>simpleton</code> AI. It resides in <code>stockholm-ai/simpleton/ai/ai.go</code>. When you have edited it to your hearts delight, the local dev server should automatically try to recompile when you save the file.
 			</p>
 			<p>
-			Your changed AI should now be available (if the compilation succeeded) on the same URL as the old <code>simpelton</code> AI was: <code>http://localhost:8080/examples/simpleton</code>.
+			Your changed AI should now be available (if the compilation succeeded) on the same URL as the old <code>simpleton</code> AI was: <code>http://localhost:8080/examples/simpleton</code>.
 			</p>
 			<h3>Creating a completely new AI</h3>
 			<p>
