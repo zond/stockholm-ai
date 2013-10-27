@@ -4,7 +4,7 @@ import (
 	"appengine/datastore"
 	"common"
 	"fmt"
-	state "github.com/zond/stockholm-ai/state"
+	"github.com/zond/stockholm-ai/state"
 	"sort"
 	"time"
 )

@@ -1,19 +1,21 @@
 <div class="about">
+	<a name="general"></a>
 	<div class="row">
-		<div id="sidebar" class="col-xs-2">
+		<div id="sidebar" class="col-xs-3">
 			<ul class="nav nav-list affix">
 				<li><a href="#general">General information</a></li>
 				<li><a href="#source">Source code</a></li>
-				<li><a href="#go">Installing Go</a></li>
-				<li><a href="#ai">Writing your own AI</a></li>
 				<li><a href="#gae">Installing Google App Engine Go SDK</a></li>
+				<li><a href="#running">Running your own server</a></li>
+				<li><a href="#creating">Creating games between AIs</a></li>
+				<li><a href="#modifying">Modifying an existing AI</a></li>
+				<li><a href="#ai">Creating a completely new AI</a></li>
 				<li><a href="#deploying">Deploying your own AI</a></li>
 				<li><a href="#running">Running your own server</a></li>
 				<li><a href="#examples">Examples</a></li>
 			</ul>
 		</div>
-		<div class="col-xs-10">
-			<a name="general"></a>
+		<div class="about-info col-xs-9">
 			<h2>stockholm-ai</h2>
 			<h3>General information</h3>
 			<p>
@@ -25,139 +27,37 @@
 			<p>
 			Each game takes place on a randomly generated map consisting of a graph of variously sized <strong>nodes</strong> and <strong>edges</strong>. On each <strong>node</strong>, and along the <strong>edges</strong> between the <strong>nodes</strong>, there can be <strong>units</strong> belonging to the different <strong>players</strong>. 
 			</p>
+			<a name="source"></a>
 			<p>
 			<strong>Units</strong> on the <strong>nodes</strong> will decimate each other if belonging to different <strong>players</strong>, or multiply if belonging to only one <strong>player</strong> and on a <strong>node</strong> with room to spare. <strong>Units</strong> on <strong>nodes</strong> smaller than the <strong>units</strong> size will starve and decimate.
 			</p>
 			<p>
 			<strong>Units</strong> on <strong>edges</strong> will travel along the <strong>edge</strong> for as many <strong>turns</strong> as the length of the <strong>edge</strong> until they reach the <strong>node</strong> on the other side of the <strong>edge</strong>.
 			</p>
-			<a name="source"></a>
 			<h3>Source code</h3>
+			<a name="gae"></a>
 			<p>
 			The source code for stockholm-ai can be found, in its entirety, at <a href="https://github.com/zond/stockholm-ai">https://github.com/zond/stockholm-ai</a>.
 			</p>
 			<p>
 			API documentation can be found at <a href="http://godoc.org/github.com/zond/stockholm-ai">http://godoc.org/github.com/zond/stockholm-ai</a>.
 			</p>
-			<a name="go"></a>
-			<h3>Installing Go</h3>
-			<p>
-			Since stockholm-ai is written in <a href="http://golang.org/">Go</a> you need to install <a href="http://golang.org/">Go</a> to do pretty much anything at all with it.
-			</p>
-			<p>
-			Download <a href="https://code.google.com/p/go/downloads/list">Go</a> and unpack it someplace:
-			</p>
-<pre>
-curl -O https://go.googlecode.com/files/go1.1.2.darwin-amd64.tar.gz
-tar xvf go1.1.2.darwin-amd64.tar.gz
-export PATH=$PATH:$PWD/go/bin
-</pre>
-			<p>
-			Set up a proper GOPATH:
-			</p>
-<pre>
-export GOPATH=$HOME/go
-mkdir $GOPATH
-</pre>
-			<a name="ai"></a>
-			<h3>Writing your own AI</h3>
-			<p>
-			To run an AI for stockholm-ai you only need a web server reachable from the internet.
-			</p>
-			<p>
-			The web server must respond to <code>POST</code> requests containing a <code>JSON</code> encoded body describing the game state by sending another <code>JSON</code> encoded body describing the orders to issue for the provided game state.
-			</p>
-			<p>
-			Since I am currently too lazy to describe this in detail, I will proceed with instructions on how to do this in <a href="http://golang.org/">Go</a>.
-			<p>
-			<p>
-			Create a small web server:
-			</p>
-<pre>
-package main
-
-import (
-	"fmt"
-	"net/http"
-)
-
-func main() {
-	http.ListenAndServe("0.0.0.0:8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello, world!")
-	}))
-}
-</pre>
-			<p>
-			Install stockholm-ai as a Go library:
-			</p>
-<pre>
-go get github.com/zond/stockholm-ai
-</pre>
-			<p>
-      Replace the anonymous handler in the above example with the <code>Randomizer</code> from <a href="https://github.com/zond/stockholm-ai/blob/master/randomizer/ai/ai.go">https://github.com/zond/stockholm-ai/blob/master/randomizer/ai/ai.go</a>:
-			</p>
-<pre>
-package main
-
-import (
-	"github.com/zond/stockholm-ai/ai"
-	"github.com/zond/stockholm-ai/common"
-	randomizerAi "github.com/zond/stockholm-ai/randomizer/ai"
-	"net/http"
-)
-
-func main() {
-	http.ListenAndServe("0.0.0.0:8081", ai.HTTPHandlerFunc(common.GoLoggerFactory, randomizerAi.Randomizer{}))
-}
-</pre>
-			<p>
-			Run your new server:
-			</p>
-<pre>
-go run test.go
-</pre>
-			<p>
-			Now, all you have to do to test it is to add it as an AI at <a href="http://stockholm-ai.appspot.com">stockholm-ai</a>.
-			</p>
-			<p>
-			When you are satisfied that your AI is working and can move units around, it's time to modify it to do something more clever than randomly moving units around. Go to <a href="https://github.com/zond/stockholm-ai/blob/master/randomizer/ai/ai.go">https://github.com/zond/stockholm-ai/blob/master/randomizer/ai/ai.go</a> to see exactly what the Randomizer does, and put an improved version of it in your own AI.
-			</p>
-			<p>
-			For some (very slight) inspiration on how to improve the randomizer AI, take a look at <a href="https://github.com/zond/stockholm-ai/blob/master/simpleton/ai/ai.go">https://github.com/zond/stockholm-ai/blob/master/simpleton/ai/ai.go</a>, an AI that actually thinks a bit about where it sends its units.
-			</p>
-			<a name="gae"></a>
 			<h3>Installing Google App Engine Go SDK</h3>
+			<p>
+			The simplest way to get where you probably want to go (building AIs or participating in the public games on <a href="http://stockholm-ai.appspot.com">http://stockholm-ai.appspot.com</a>) is to develop and host your AI on <a href="https://developers.google.com/appengine/">https://developers.google.com/appengine/</a>.
+			</p>
 			<p>
 			Download <a href="https://developers.google.com/appengine/downloads#Google_App_Engine_SDK_for_Go">Google App Engine Go SDK</a> and unpack it someplace:
 			</p>
+			<a name="running"></a>
 <pre>
 curl -O http://googleappengine.googlecode.com/files/go_appengine_sdk_darwin_amd64-1.8.5.zip
 unzip go_appengine_sdk_darwin_amd64-1.8.5.zip
-export PATH=$PATH:$PWD/go_appengine/
+export PATH=$PATH:$(pwd)/go_appengine/
 </pre>
-			<a name="deploying"></a>
-			<h3>Deploying your own AI</h3>
-			<p>
-			If you have your own host accessible from the internet, you could be finished with your AI work after <a href="#ai">writing your own AI</a>, but often you don't have the resources or energy to set something like that up. If this is the case you can simply host your AI on Google App Engine.
-			</p>
-			<p>
-			Begin by signing up at <a href="https://developers.google.com/appengine/">https://developers.google.com/appengine/</a> to get an account. Then go to <a href="https://appengine.google.com/">https://appengine.google.com/</a> to create a new application. Pick a nice name and go with the default options.
-			</p>
-			<p>
-			Now you can just fork <a href="https://github.com/zond/stockholm-ai">https://github.com/zond/stockholm-ai</a> and edit <a href="https://github.com/zond/stockholm-ai/blob/master/randomizer/app.yml">https://github.com/zond/stockholm-ai/blob/master/randomizer/app.yml</a> to reflect the name you picked for your application. When this is done, use <code>appcfg.py</code> from <a href="#gae">Google App Engine Go SDK</a> to update your application with the randomizer code:
-			</p>
-<pre>
-appcfg.py update stockholm-ai/randomizer
-</pre>
-			<a name="running"></a>
 			<h3>Running your own server</h3>
 			<p>
-			Install the dependencies:
-			</p>
-<pre>
-go get github.com/gorilla/mux
-go get code.google.com/p/snappy-go/snappy
-</pre>
+			To quickly get started, the best way is to just start your own server running this very interface. 
 			<p>
 			Check out the code from github:
 			</p>
@@ -165,10 +65,72 @@ go get code.google.com/p/snappy-go/snappy
 git clone https://github.com/zond/stockholm-ai.git
 </pre>
 			<p>
-			Start the local development server:
+			Start the local development server with the already-prepared GOPATH directory properly set by using <code>dev_appserver.py</code> from the <a href="https://developers.google.com/appengine/">Google App Engine</a> installation:
+			</p>
+			<a name="creating"></a>
+<pre>
+env GOPATH=$(pwd)/stockholm-ai/GOPATH dev_appserver.py stockholm-ai/hub
+</pre>
+			<h3>Creating games between AIs</h3>
+			<p>
+			When the local development server is running, you can add the 2 (actually 3, but one is broken by design) example AIs to the list of AIs for your server: <code>http://localhost:8080/examples/randomizer</code> and <code>http://localhost:8080/examples/simpleton</code>.
+			</p>
+			<p>
+			Go to <a href="http://localhost:8080/ais">http://localhost:8080/ais</a> and add those two URLs.
+			</p>
+			<p>
+			When this is done, you can create games between these two AIs, and watch the results. 
+			</p>
+			<a name="modifying"></a>
+			<p>
+			Go to <a href="http://localhost:8080/games">http://localhost:8080/games</a> and create a game between your newly added AIs.
+      </p>
+			<p>
+			Remember that each game is <strong>only played once</strong>. That the interface renders the same graph different ways each time you watch the game does not mean the game is played <strong>again</strong>. To get new results, you have to <strong>create a new game</strong>.
+			</p>
+			<h3>Modifying an existing AI</h3>
+			<a name="ai"></a>
+			<p>
+			To quickly get a feel for what you can do with an AI, you can just edit (for example) the <code>simpleton</code> AI. It resides in <code>stockholm-ai/simpleton/ai/ai.go</code>. When you have edited it to your hearts delight, the local dev server should automatically try to recompile when you save the file.
+			</p>
+			<p>
+			Your changed AI should now be available (if the compilation succeeded) on the same URL as the old <code>simpelton</code> AI was: <code>http://localhost:8080/examples/simpleton</code>.
+			</p>
+			<h3>Creating a completely new AI</h3>
+			<p>
+			To create a completely new AI (to be able to match it against the example AIs on your local server), you just copy the <code>stockholm-ai/simpleton</code> directory to a new directory.
 			</p>
 <pre>
-dev_appserver.py stockholm-ai/hub
+cp -av stockholm-ai/simpleton stockholm-ai/myai
+</pre>
+			<p>
+			Now, you might want to host this AI inside the local server you are already running. If you want to do this, you have to look at the <code>stockholm-ai/hub/web/web.go</code> file and edit it a bit. This is extracurricular.
+			</p>
+			<p>
+			On the other hand, if you are satisfied with just running the new AI independently on its own server, you can just start it just like you started the local hub server. (But on <strong>different ports</strong>, or it won't successfully start)
+			</p>
+<pre>
+env GOPATH=$(pwd)/stockholm-ai/GOPATH dev_appserver.py stockholm-ai/myai --port=8081 --admin_port=8001
+</pre>
+			<a name="deploying"></a>
+      <p>
+			Now you can edit <code>stockholm-ai/myai/ai/ai.go</code> to improve your ai, add <code>http://localhost:8081</code> to the list of AIs in your local hub server and start games.
+			</p>
+			<p>
+			For some examples of what the AI can do instead of just trying to invade the closest node, take a look at <a href="#examples">the examples</a>.
+			</p>
+			<h3>Deploying your own AI</h3>
+			<p>
+			I strongly suggest just hosting your new AI on <a href="https://developers.google.com/appengine/">https://developers.google.com/appengine/</a>. If you don't want to do that, it is fairly simple to run the servers in a regular Go web server. The <a href="http://godoc.org/github.com/zond/stockholm-ai/ai#HTTPHandlerFunc">http://godoc.org/github.com/zond/stockholm-ai/ai#HTTPHandlerFunc</a> returns a <code>http.Handler</code> that you can use in any Go web server. Otherwise, just continue with these instructions.
+			</p>
+			<p>
+			Begin by signing up at <a href="https://developers.google.com/appengine/">https://developers.google.com/appengine/</a> to get an account. Then go to <a href="https://appengine.google.com/">https://appengine.google.com/</a> to create a new application. Pick a nice name and go with the default options.
+			</p>
+			<p>
+			Now you can just edit the <code>app.yml</code> file of your new AI, and replace <code>some-project</code> with the name you registered whe you signed up at <a href="https://developers.google.com/appengine/">Google App Engine</a>. When this is done, you can use <code>appcfg.py</code> from the <a href="https://developers.google.com/appengine/">Google App Engine</a> installation.
+			</p>
+<pre>
+env GOPATH=$(pwd)/stockholm-ai/GOPATH appcfg.py stockholm-ai/myai
 </pre>
 			<a name="examples"></a>
 			<h3>Examples</h3>

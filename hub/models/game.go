@@ -11,7 +11,7 @@ import (
 	"fmt"
 	ai "github.com/zond/stockholm-ai/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
-	state "github.com/zond/stockholm-ai/state"
+	"github.com/zond/stockholm-ai/state"
 	"io"
 	"net/http"
 	"time"

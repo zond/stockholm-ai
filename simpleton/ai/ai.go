@@ -1,8 +1,8 @@
 package ai
 
 import (
-	common "github.com/zond/stockholm-ai/common"
-	state "github.com/zond/stockholm-ai/state"
+	"github.com/zond/stockholm-ai/common"
+	"github.com/zond/stockholm-ai/state"
 	"math/rand"
 	"time"
 )

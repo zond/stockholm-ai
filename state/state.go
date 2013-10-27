@@ -1,7 +1,7 @@
 package state
 
 import (
-	common "github.com/zond/stockholm-ai/common"
+	"github.com/zond/stockholm-ai/common"
 	"math/rand"
 )
 

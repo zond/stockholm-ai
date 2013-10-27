@@ -5,7 +5,7 @@ import (
 	"appengine/datastore"
 	"appengine/user"
 	"fmt"
-	common "github.com/zond/stockholm-ai/common"
+	"github.com/zond/stockholm-ai/common"
 	"net/http"
 	"regexp"
 	"strings"

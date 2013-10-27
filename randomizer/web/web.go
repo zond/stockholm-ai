@@ -1,8 +1,8 @@
 package web
 
 import (
-	ai "github.com/zond/stockholm-ai/ai"
-	common "github.com/zond/stockholm-ai/hub/common"
+	"github.com/zond/stockholm-ai/ai"
+	"github.com/zond/stockholm-ai/hub/common"
 	randomizerAi "github.com/zond/stockholm-ai/randomizer/ai"
 	"net/http"
 )

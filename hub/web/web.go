@@ -7,7 +7,7 @@ import (
 	"common"
 	"fmt"
 	"github.com/gorilla/mux"
-	ai "github.com/zond/stockholm-ai/ai"
+	"github.com/zond/stockholm-ai/ai"
 	brokenAi "github.com/zond/stockholm-ai/broken/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
 	randomizerAi "github.com/zond/stockholm-ai/randomizer/ai"
