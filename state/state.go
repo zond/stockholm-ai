@@ -156,6 +156,8 @@ type State struct {
 	Nodes map[NodeId]*Node
 	// Changes are the changes and reasons since last turn.
 	Changes map[NodeId]Changes
+	// Orders from each player
+	Orders map[PlayerId]Orders
 }
 
 func (self *State) executeTransits(logger common.Logger) {
@@ -346,6 +348,7 @@ Next changes this state into the next state, subject to the provided orders.
 */
 func (self *State) Next(c common.Logger, orderMap map[PlayerId]Orders) (winner *PlayerId) {
 	self.Changes = map[NodeId]Changes{}
+	self.Orders = orderMap
 	self.executeTransits(c)
 	self.executeOrders(orderMap)
 	self.executeGrowth(c)
