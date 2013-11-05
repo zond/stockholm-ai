@@ -202,7 +202,7 @@ func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
 		for _, order := range orders {
 			if src, found := self.Nodes[order.Src]; found {
 				if edge, found := src.Edges[order.Dst]; found {
-					toMove := common.Min(src.Units[playerId], order.Units)
+					toMove := common.Max(0, common.Min(src.Units[playerId], order.Units))
 					src.Units[playerId] -= toMove
 					edgeCpy := edge
 					playerIdCpy := playerId
