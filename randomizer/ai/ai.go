@@ -20,7 +20,7 @@ type Randomizer struct{}
 /*
 Orders will return orders randomly moving up to 20% of all troops in each occupied node along randomly chosen edges of that node.
 */
-func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, s *state.State) (result state.Orders) {
+func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, turnOrdinal int, s *state.State) (result state.Orders) {
 	// Go through all nodes
 	for _, node := range s.Nodes {
 		// If I have units here

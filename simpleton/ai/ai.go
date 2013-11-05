@@ -38,7 +38,7 @@ func (self Simpleton) nearestEmpty(me state.PlayerId, src state.NodeId, s *state
 Orders will return orders for all nodes in s where me has more than 2 units, that moves half the units to the nearest
 node in s where me has no units.
 */
-func (self Simpleton) Orders(logger common.Logger, me state.PlayerId, s *state.State) (result state.Orders) {
+func (self Simpleton) Orders(logger common.Logger, me state.PlayerId, turnOrdinal int, s *state.State) (result state.Orders) {
 	// For each node in s
 	for _, node := range s.Nodes {
 		// If me has more than 2 units there

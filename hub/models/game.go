@@ -124,9 +124,10 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 
 					// create a request
 					orderRequest := ai.OrderRequest{
-						Me:     orderResp.StatePlayerId,
-						State:  lastTurn.State,
-						GameId: state.GameId(self.Id.Encode()),
+						Me:          orderResp.StatePlayerId,
+						State:       lastTurn.State,
+						GameId:      state.GameId(self.Id.Encode()),
+						TurnOrdinal: lastTurn.Ordinal,
 					}
 
 					// encode it into a body, and remember its string representation
