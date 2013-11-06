@@ -77,6 +77,14 @@ func TryParseInt(s string, de int) (result int) {
 	return
 }
 
+func MustParseInt(s string) (result int) {
+	var err error
+	if result, err = strconv.Atoi(s); err != nil {
+		panic(err)
+	}
+	return
+}
+
 func MustParseFloat64(s string) (result float64) {
 	var err error
 	if result, err = strconv.ParseFloat(s, 64); err != nil {

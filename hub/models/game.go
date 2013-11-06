@@ -61,7 +61,7 @@ func (self Games) Swap(i, j int) {
 
 func (self Games) process(c common.Context) Games {
 	for index, _ := range self {
-		(&self[index]).fastProcess(c)
+		(&self[index]).process(c)
 	}
 	return self
 }
@@ -73,7 +73,6 @@ type Game struct {
 	State       GameState
 	PlayerNames []string `datastore:"-"`
 	WinnerName  string   `datastore:"-"`
-	Turns       Turns    `datastore:"-"`
 	Length      int
 	CreatedAt   time.Time
 }
@@ -252,13 +251,7 @@ func (self *Game) setPlayerNames(c common.Context) {
 	}
 }
 
-func (self *Game) fastProcess(c common.Context) *Game {
-	self.setPlayerNames(c)
-	return self
-}
-
 func (self *Game) process(c common.Context) *Game {
-	self.Turns = GetTurnsByParent(c, self.Id)
 	self.setPlayerNames(c)
 	return self
 }
@@ -342,7 +335,6 @@ func (self *Game) Save(c common.Context) *Game {
 				State: state.RandomState(common.GAELogger{c}, playerIds),
 			}
 			turn.Save(c, self.Id)
-			self.Turns = Turns{*turn}
 			nextTurnFunc.Call(c, self.Id, self.PlayerNames)
 			return nil
 		})

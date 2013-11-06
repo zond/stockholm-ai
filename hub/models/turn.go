@@ -21,6 +21,10 @@ func turnsKeyForParent(k interface{}) string {
 	return fmt.Sprintf("Turns{Parent:%v}", k)
 }
 
+func givenTurnKeyForParent(k interface{}, o interface{}) string {
+	return fmt.Sprintf("Turns{Parent:%v,Ordinal:%v}", k, o)
+}
+
 func latestTurnKeyForParent(k interface{}) string {
 	return fmt.Sprintf("Turns{Latest,Parent:%v}", k)
 }
@@ -90,6 +94,29 @@ func GetTurnsByParent(c common.Context, parent *datastore.Key) (result Turns) {
 	return result.process(c)
 }
 
+func findGivenTurnByParent(c common.Context, parent *datastore.Key, ordinal int) *Turn {
+	var turns Turns
+	ids, err := datastore.NewQuery(TurnKind).Ancestor(parent).Filter("Ordinal=", ordinal).Limit(1).GetAll(c, &turns)
+	common.AssertOkError(err)
+	for index, id := range ids {
+		turns[index].Id = id
+	}
+	if len(turns) == 0 {
+		return nil
+	}
+	return &turns[0]
+}
+
+func GetGivenTurnByParent(c common.Context, parent *datastore.Key, ordinal int) *Turn {
+	var result Turn
+	if common.Memoize(c, givenTurnKeyForParent(parent, ordinal), &result, func() interface{} {
+		return findGivenTurnByParent(c, parent, ordinal)
+	}) {
+		return (&result).process(c)
+	}
+	return nil
+}
+
 func findLatestTurnByParent(c common.Context, parent *datastore.Key) *Turn {
 	var turns Turns
 	ids, err := datastore.NewQuery(TurnKind).Ancestor(parent).Order("-CreatedAt").Limit(1).GetAll(c, &turns)
@@ -125,6 +152,6 @@ func (self *Turn) Save(c common.Context, parent *datastore.Key) *Turn {
 		_, err = datastore.Put(c, self.Id, self)
 		common.AssertOkError(err)
 	}
-	common.MemDel(c, turnsKeyForParent(parent))
+	common.MemDel(c, turnsKeyForParent(parent), latestTurnKeyForParent(parent), givenTurnKeyForParent(parent, self.Ordinal))
 	return self
 }

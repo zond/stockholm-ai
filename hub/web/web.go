@@ -151,6 +151,10 @@ func getGame(c common.Context) {
 	c.RenderJSON(models.GetGameById(c, common.MustDecodeKey(c.Vars["game_id"])))
 }
 
+func getTurn(c common.Context) {
+	c.RenderJSON(models.GetGivenTurnByParent(c, common.MustDecodeKey(c.Vars["game_id"]), aiCommon.MustParseInt(c.Vars["turn_ordinal"])))
+}
+
 func createGame(c common.Context) {
 	if c.Authenticated() {
 		var game models.Game
@@ -248,6 +252,11 @@ func init() {
 	gamesRouter := router.PathPrefix("/games").MatcherFunc(wantsJSON).Subrouter()
 
 	gameRouter := gamesRouter.PathPrefix("/{game_id}").Subrouter()
+
+	turnsRouter := gameRouter.PathPrefix("/turns").Subrouter()
+	turnRouter := turnsRouter.PathPrefix("/{turn_ordinal}").Subrouter()
+	turnRouter.Methods("GET").HandlerFunc(handler(getTurn))
+
 	gameRouter.Methods("GET").HandlerFunc(handler(getGame))
 
 	gamesRouter.Methods("GET").HandlerFunc(handler(getGames))
