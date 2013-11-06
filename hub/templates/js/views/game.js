@@ -15,7 +15,7 @@ window.GameView = Backbone.View.extend({
 		});
 		this.listenTo(this.model, 'change', this.render);
 		this.model.fetch();
-		this.currenTurn = 0;
+		this.currenTurn = options.ordinal || 0;
 	},
 
 	unlessFinished: function(cb) {
@@ -80,6 +80,7 @@ window.GameView = Backbone.View.extend({
 		  that.$('.turn-forward').attr('disabled', 'disabled'); 
 		  that.$('.turn-forward-all').attr('disabled', 'disabled'); 
 		}
+		window.session.router.navigate("/games/" + that.model.get('Id') + '/turns/' + ordinal);
 	  var turnModel = new Turn({ url: '/games/' + that.model.get('Id') + '/turns/' + ordinal });
 		turnModel.fetch({
 			success: function() {

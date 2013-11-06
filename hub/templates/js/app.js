@@ -50,6 +50,7 @@ $(window).load(function() {
 			"ais/:id/errors": "showAiErrors",
 			"games": "games",
 			"games/:id": "showGame",
+			"games/:id/turns/:ordinal": "showTurn",
 			"*all": "about",
 		},
 
@@ -59,6 +60,13 @@ $(window).load(function() {
 
 		showGame: function(id) {
 		  this.render(new GameView({ id: id }));
+		},
+
+		showTurn: function(id, ordinal) {
+		  this.render(new GameView({ 
+				id: id,
+				ordinal: parseInt(ordinal),
+			}));
 		},
 
 		games: function() {
