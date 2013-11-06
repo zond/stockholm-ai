@@ -41,7 +41,7 @@ window.GameView = Backbone.View.extend({
 		ev.preventDefault();
 		var that = this;
 		that.unlessFinished(function() {
-			that.renderTurn(that.model.get('Turns').length - 1);
+			that.renderTurn(that.model.get('Length') - 1);
 		});
 	},
 
