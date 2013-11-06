@@ -63,7 +63,10 @@ window.GamesView = Backbone.View.extend({
 			pages: that.collection.pages,
 		}));
 		that.collection.each(function(game) {
-			that.$('table').append('<tr><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('PlayerNames') + '</a></td><td>' + (game.get('Winner') != null ? '<a class="navigate" href="/games/' + game.get('Id') + '">Winner: ' + game.get('WinnerName') + '</a>' : '') + '</td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('State') + '</a></td><td><a class="navigate" href="/games/' + game.get('Id') + '">' + game.get('Length') + ' turns</a></td></tr>');
+			that.$('table').append(new ListedGameView({
+			  model: game,
+				collection: that.collection,
+			}).render().el);
 		});
 		that.ais.each(function(ai) {
       that.$('select').append('<option value="' + ai.get('Id') + '">' + ai.get('Name') + '</option>');

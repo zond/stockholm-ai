@@ -65,6 +65,10 @@ func (self Context) Authenticated() bool {
 	return false
 }
 
+func (self Context) DevServer() bool {
+	return appengine.IsDevAppServer()
+}
+
 func SetContentType(w http.ResponseWriter, t string, cache bool) {
 	w.Header().Set("Content-Type", t)
 	w.Header().Set("Vary", "Accept")

@@ -1,0 +1,30 @@
+<td>
+	<a class="navigate" href="/games/<%- model.get('Id') %>">
+		<%- model.get('PlayerNames') %>
+	</a>
+</td>
+<td>
+	{{if .DevServer}}
+	<button class="btn btn-xs clone-button">
+		clone
+	</button>
+	{{end}}
+</td>
+<td>
+	<% if (model.get('Winner') != null) { %>
+	<a class="navigate" href="/games/<%- model.get('Id') %>">
+		Winner: <%- model.get('WinnerName') %>
+	</a>
+	<% } %>
+</td>
+<td>
+	<a class="navigate" href="/games/<%- model.get('Id') %>">
+		<%- model.get('State') %>
+	</a>
+</td>
+<td>
+	<a class="navigate" href="/games/<%- model.get('Id') %>">
+		<%- model.get('Length') %> turns
+	</a>
+</td>
+
