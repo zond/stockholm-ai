@@ -109,6 +109,10 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 	if err := common.Transaction(con, func(c common.Context) (err error) {
 		lastTurn := GetLatestTurnByParent(c, self.Id)
 		responses := make(chan orderResponse, len(self.Players))
+		ais := map[state.PlayerId]string{}
+		for index, playerId := range self.Players {
+			ais[state.PlayerId(playerId.Encode())] = self.PlayerNames[index]
+		}
 		for _, playerId := range self.Players {
 			orderResp := orderResponse{
 				DatastorePlayerId: playerId,
@@ -127,6 +131,7 @@ func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
 						State:       lastTurn.State,
 						GameId:      state.GameId(self.Id.Encode()),
 						TurnOrdinal: lastTurn.Ordinal,
+						AIs:         ais,
 					}
 
 					// encode it into a body, and remember its string representation

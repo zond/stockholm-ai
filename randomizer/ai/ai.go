@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"github.com/zond/stockholm-ai/ai"
 	"github.com/zond/stockholm-ai/common"
 	"github.com/zond/stockholm-ai/state"
 	"math/rand"
@@ -20,7 +21,9 @@ type Randomizer struct{}
 /*
 Orders will return orders randomly moving up to 20% of all troops in each occupied node along randomly chosen edges of that node.
 */
-func (self Randomizer) Orders(logger common.Logger, me state.PlayerId, turnOrdinal int, s *state.State) (result state.Orders) {
+func (self Randomizer) Orders(logger common.Logger, req ai.OrderRequest) (result state.Orders) {
+	me := req.Me
+	s := req.State
 	// Go through all nodes
 	for _, node := range s.Nodes {
 		// If I have units here
