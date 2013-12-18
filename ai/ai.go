@@ -4,6 +4,7 @@ import (
 	"github.com/zond/stockholm-ai/common"
 	"github.com/zond/stockholm-ai/state"
 	"net/http"
+	"runtime/debug"
 )
 
 /*
@@ -40,7 +41,7 @@ func HTTPHandlerFunc(lf common.LoggerFactory, ai AI) http.HandlerFunc {
 		defer func() {
 			if e := recover(); e != nil {
 				w.WriteHeader(500)
-				logger.Printf("Error delivering orders: %v", e)
+				logger.Printf("Error delivering orders: %v\n%v", e, string(debug.Stack()))
 			}
 		}()
 		var req OrderRequest
