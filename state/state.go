@@ -225,54 +225,58 @@ func (self *State) executeOrders(orderMap map[PlayerId]Orders) {
 	}
 }
 
+// executeGrowth will increas the number of units in nodes with an owner, and decrease the number of units in nodes with more units than size.
 func (self *State) executeGrowth(c common.Logger) {
 	execution := []func(){}
+	// for each node
 	for _, node := range self.Nodes {
+		// calculate total
 		total := 0
 		for _, units := range node.Units {
 			total += units
 		}
+		// build a slice of players with units
 		players := make([]PlayerId, 0, len(node.Units))
 		for playerId, units := range node.Units {
 			if units > 0 {
 				players = append(players, playerId)
 			}
 		}
-		if len(players) == 1 {
+		// if we have only one player, and we have units but less than size
+		if len(players) == 1 && total > 0 && total < node.Size {
 			playerId := players[0]
 			units := node.Units[playerId]
-			if total > 0 && total < node.Size {
-				nodeCpy := node
-				newSum := common.Min(node.Size, int(1+float64(units)*(1.0+(growthFactor*(float64(node.Size-total)/float64(node.Size))))))
-				if newSum > units {
-					execution = append(execution, func() {
-						nodeCpy.Units[playerId] = newSum
-						self.Changes[nodeCpy.Id] = append(self.Changes[nodeCpy.Id], Change{
-							Units:    newSum - units,
-							PlayerId: playerId,
-							Reason:   ChangeReason("Growth"),
-						})
+			nodeCpy := node
+			newSum := common.Min(node.Size, int(1+float64(units)*(1.0+(growthFactor*(float64(node.Size-total)/float64(node.Size))))))
+			if newSum > units {
+				execution = append(execution, func() {
+					nodeCpy.Units[playerId] = newSum
+					self.Changes[nodeCpy.Id] = append(self.Changes[nodeCpy.Id], Change{
+						Units:    newSum - units,
+						PlayerId: playerId,
+						Reason:   ChangeReason("Growth"),
 					})
-				}
+				})
 			}
-		} else if len(players) > 1 {
-			if total > node.Size {
-				for playerId, units := range node.Units {
-					if units > 0 {
-						playerIdCpy := playerId
-						nodeCpy := node
-						newSum := common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size)))))-1)
-						if newSum < units {
-							oldSum := units
-							execution = append(execution, func() {
-								nodeCpy.Units[playerIdCpy] = newSum
-								self.Changes[nodeCpy.Id] = append(self.Changes[nodeCpy.Id], Change{
-									Units:    newSum - oldSum,
-									PlayerId: playerIdCpy,
-									Reason:   ChangeReason("Starvation"),
-								})
+			// else if we have more units than size
+		} else if total > node.Size {
+			// for eachplayer
+			for playerId, units := range node.Units {
+				// with units
+				if units > 0 {
+					playerIdCpy := playerId
+					nodeCpy := node
+					newSum := common.Max(0, int(float64(units)/(1.0+(starvationFactor*(float64(units)/float64(node.Size)))))-1)
+					if newSum < units {
+						oldSum := units
+						execution = append(execution, func() {
+							nodeCpy.Units[playerIdCpy] = newSum
+							self.Changes[nodeCpy.Id] = append(self.Changes[nodeCpy.Id], Change{
+								Units:    newSum - oldSum,
+								PlayerId: playerIdCpy,
+								Reason:   ChangeReason("Starvation"),
 							})
-						}
+						})
 					}
 				}
 			}
