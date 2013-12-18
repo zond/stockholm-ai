@@ -45,14 +45,16 @@ window.GamesView = Backbone.View.extend({
 	createGame: function(ev) {
 		var that = this;
 	  ev.preventDefault();
-		that.collection.create({
-		  Players: that.$('select').val(),
-			State: 'Created',
-			Length: 0,
-			PlayerNames: _.collect(that.$('select').val(), function(id) {
-			  return that.ais.get(id).get('Name')
-			}),
-		}, { at: 0 });
+		if (that.$('select').val().length > 0) {
+			that.collection.create({
+				Players: that.$('select').val(),
+				State: 'Created',
+				Length: 0,
+				PlayerNames: _.collect(that.$('select').val(), function(id) {
+					return that.ais.get(id).get('Name')
+				}),
+			}, { at: 0 });
+		}
 	},
 
   render: function() {
