@@ -455,8 +455,17 @@ func RandomState(c common.Logger, players []PlayerId) (result *State) {
 		node.connectRandomly(c, allNodes, result)
 	}
 	perm := rand.Perm(len(allNodes))
+	startNodes := make([]*Node, len(players))
+	smallest := 100
 	for index, playerId := range players {
 		allNodes[perm[index]].Units[playerId] = 10
+		if smallest > allNodes[perm[index]].Size {
+			smallest = allNodes[perm[index]].Size
+		}
+		startNodes[index] = allNodes[perm[index]]
+	}
+	for _, node := range startNodes {
+		node.Size = smallest
 	}
 	return
 }
