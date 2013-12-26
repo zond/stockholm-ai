@@ -23,3 +23,5 @@ _testmain.go
 *.swp
 github.com/zond/stockholm-ai
 hub/deps
+cohen
+
