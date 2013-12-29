@@ -1,8 +1,10 @@
 package state
 
 import (
-	"github.com/zond/stockholm-ai/common"
+	"encoding/json"
 	"math/rand"
+
+	"github.com/zond/stockholm-ai/common"
 )
 
 const (
@@ -78,6 +80,10 @@ func (self *Node) Connect(node *Node, edgeLength int) {
 
 func (self *Node) connectRandomly(c common.Logger, allNodes []*Node, state *State) {
 	minEdges := common.Norm(4, 2, 2, len(allNodes)-1)
+	self.connectMin(c, allNodes, state, minEdges)
+}
+
+func (self *Node) connectMin(c common.Logger, allNodes []*Node, state *State, minEdges int) {
 	for len(self.Edges) < minEdges || !self.allReachable(c, state) {
 		perm := rand.Perm(len(allNodes))
 		var randomNode *Node
@@ -158,6 +164,19 @@ type State struct {
 	Changes map[NodeId]Changes
 	// Orders from each player
 	Orders map[PlayerId]Orders
+}
+
+func (self *State) Clone() (result *State) {
+	b, err := json.Marshal(self)
+	if err != nil {
+		panic(err)
+	}
+	result = &State{}
+	err = json.Unmarshal(b, result)
+	if err != nil {
+		panic(err)
+	}
+	return
 }
 
 func (self *State) executeTransits(logger common.Logger) {
@@ -456,16 +475,22 @@ func RandomState(c common.Logger, players []PlayerId) (result *State) {
 	}
 	perm := rand.Perm(len(allNodes))
 	startNodes := make([]*Node, len(players))
+	maxEdges := 0
 	smallest := 100
 	for index, playerId := range players {
-		allNodes[perm[index]].Units[playerId] = 10
-		if smallest > allNodes[perm[index]].Size {
-			smallest = allNodes[perm[index]].Size
+		node := allNodes[perm[index]]
+		node.Units[playerId] = 10
+		if smallest > node.Size {
+			smallest = node.Size
 		}
-		startNodes[index] = allNodes[perm[index]]
+		if len(node.Edges) > maxEdges {
+			maxEdges = len(node.Edges)
+		}
+		startNodes[index] = node
 	}
 	for _, node := range startNodes {
 		node.Size = smallest
+		node.connectMin(c, allNodes, result, maxEdges)
 	}
 	return
 }
