@@ -155,7 +155,7 @@ window.GameView = Backbone.View.extend({
 					_.each(changes, function(change) {
 						messages.push(players[change.PlayerId].name + ': ' + change.Units + ' (' + change.Reason + ')');
 					});
-					$('#' + selEscape(nodeId) + ' title').text(messages.join('\n'));
+					$('#' + selEscape(nodeId) + ' title').text(nodeId + '\n' + messages.join('\n'));
 				}
 				var parentNode = that.$('svg').parent()[0];
 				parentNode.innerHTML = parentNode.innerHTML;
