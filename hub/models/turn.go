@@ -2,8 +2,8 @@ package models
 
 import (
 	"appengine/datastore"
-	"common"
 	"fmt"
+	"github.com/zond/stockholm-ai/hub/common"
 	"github.com/zond/stockholm-ai/state"
 	"sort"
 	"time"
@@ -62,7 +62,7 @@ func (self *Turn) Next(c common.Context, orderMap map[state.PlayerId]state.Order
 	cpy := *self
 	cpy.Id = nil
 	cpy.Ordinal += 1
-	winner := (&cpy.State).Next(common.GAELogger{c}, orderMap)
+	winner := cpy.State.Next(common.GAELogger{c}, orderMap)
 	return &cpy, winner
 }
 

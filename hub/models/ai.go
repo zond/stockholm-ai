@@ -2,8 +2,8 @@ package models
 
 import (
 	"appengine/datastore"
-	"common"
 	"fmt"
+	"github.com/zond/stockholm-ai/hub/common"
 	"sort"
 	"time"
 )

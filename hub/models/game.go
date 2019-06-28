@@ -6,15 +6,16 @@ import (
 	"appengine/delay"
 	"appengine/urlfetch"
 	"bytes"
-	"common"
 	"encoding/json"
 	"fmt"
-	ai "github.com/zond/stockholm-ai/ai"
-	aiCommon "github.com/zond/stockholm-ai/common"
+	"github.com/zond/stockholm-ai/hub/common"
 	"github.com/zond/stockholm-ai/state"
 	"io"
 	"net/http"
 	"time"
+
+	ai "github.com/zond/stockholm-ai/ai"
+	aiCommon "github.com/zond/stockholm-ai/common"
 )
 
 const (
