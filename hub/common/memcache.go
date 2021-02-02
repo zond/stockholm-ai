@@ -1,10 +1,7 @@
 package common
 
 import (
-	"appengine"
-	"appengine/memcache"
 	"bytes"
-	"code.google.com/p/snappy-go/snappy"
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
@@ -12,6 +9,11 @@ import (
 	"math/rand"
 	"reflect"
 	"time"
+
+	"github.com/golang/snappy"
+
+	"appengine"
+	"appengine/memcache"
 )
 
 const (
