@@ -1,5 +1,5 @@
 runtime: go111
-main: ./web
+main: github.com/zond/stockholm-ai/hub/web
 
 handlers:
     - url: /.*

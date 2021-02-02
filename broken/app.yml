@@ -1,8 +1,8 @@
 application: some-project
 version: 1
 runtime: go111
-main: web
+main: github.com/zond/stockholm-ai/broken/web
 
 handlers:
-- url: /.*
-  script: auto
+    - url: /.*
+      script: auto
