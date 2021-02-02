@@ -1,11 +1,13 @@
 package models
 
 import (
-	"appengine/datastore"
 	"fmt"
-	"github.com/zond/stockholm-ai/hub/common"
 	"sort"
 	"time"
+
+	"github.com/zond/stockholm-ai/hub/common"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 const (
@@ -105,7 +107,7 @@ func (self *AI) AddError(c common.Context, turnId *datastore.Key, err error) {
 		ErrorDetail2Bytes: []byte(fmt.Sprintf("%#v", err)),
 	})
 	if e != nil {
-		c.Errorf("Got %+v when trying to save a new error!", e)
+		log.Errorf(c, "Got %+v when trying to save a new error!", e)
 	}
 	common.MemDel(c, aiErrorsKeyByParent(self.Id))
 }

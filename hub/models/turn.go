@@ -1,12 +1,13 @@
 package models
 
 import (
-	"appengine/datastore"
 	"fmt"
-	"github.com/zond/stockholm-ai/hub/common"
-	"github.com/zond/stockholm-ai/state"
 	"sort"
 	"time"
+
+	"github.com/zond/stockholm-ai/hub/common"
+	"github.com/zond/stockholm-ai/state"
+	"google.golang.org/appengine/datastore"
 )
 
 const (

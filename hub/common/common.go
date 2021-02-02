@@ -1,20 +1,23 @@
 package common
 
 import (
-	"appengine"
-	"appengine/datastore"
-	"appengine/user"
 	"fmt"
-	"github.com/zond/stockholm-ai/common"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/zond/stockholm-ai/common"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/user"
 )
 
 var prefPattern = regexp.MustCompile("^([^\\s;]+)(;q=([\\d.]+))?$")
 
 func Transaction(outerContext Context, f func(Context) error) error {
-	return datastore.RunInTransaction(outerContext, func(innerContext appengine.Context) error {
+	return datastore.RunInTransaction(outerContext, func(innerContext context.Context) error {
 		cpy := outerContext
 		cpy.Context = innerContext
 		return f(cpy)
@@ -22,11 +25,11 @@ func Transaction(outerContext Context, f func(Context) error) error {
 }
 
 type GAELogger struct {
-	appengine.Context
+	context.Context
 }
 
 func (self GAELogger) Printf(f string, i ...interface{}) {
-	self.Infof(f, i...)
+	log.Infof(self.Context, f, i...)
 }
 
 func GAELoggerFactory(r *http.Request) common.Logger {
@@ -48,7 +51,7 @@ func MustUnmarshal(b []byte, i interface{}) {
 }
 
 type Context struct {
-	appengine.Context
+	context.Context
 	Req     *http.Request
 	Resp    http.ResponseWriter
 	Version string

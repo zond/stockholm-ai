@@ -1,18 +1,20 @@
 package models
 
 import (
-	"appengine"
-	"appengine/datastore"
-	"appengine/delay"
-	"appengine/urlfetch"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/zond/stockholm-ai/hub/common"
-	"github.com/zond/stockholm-ai/state"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/zond/stockholm-ai/hub/common"
+	"github.com/zond/stockholm-ai/state"
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/delay"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/urlfetch"
 
 	ai "github.com/zond/stockholm-ai/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
@@ -96,14 +98,14 @@ func (self orderError) Error() string {
 	return fmt.Sprintf("Got %v from %v", self.Response.StatusCode, self.Request.URL)
 }
 
-func nextTurn(cont appengine.Context, id *datastore.Key, playerNames []string) {
+func nextTurn(cont context.Context, id *datastore.Key, playerNames []string) {
 	con := common.Context{Context: cont}
 	self := getGameById(con, id)
 	self.PlayerNames = playerNames
 	if self.Length > maxGameDuration {
 		self.State = StateFinished
 		self.Save(con)
-		con.Infof("Ended %v due to timeout", self.Id)
+		log.Infof(cont, "Ended %v due to timeout", self.Id)
 		return
 	}
 	errorSavers := []func(){}

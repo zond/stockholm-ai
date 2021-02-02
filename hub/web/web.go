@@ -1,20 +1,21 @@
-package web
+package main
 
 import (
-	"appengine"
-	"appengine/user"
 	"bytes"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/zond/stockholm-ai/ai"
-	"github.com/zond/stockholm-ai/hub/common"
-	"github.com/zond/stockholm-ai/hub/models"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/gorilla/mux"
+	"github.com/zond/stockholm-ai/ai"
+	"github.com/zond/stockholm-ai/hub/common"
+	"github.com/zond/stockholm-ai/hub/models"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/user"
 
 	brokenAi "github.com/zond/stockholm-ai/broken/ai"
 	aiCommon "github.com/zond/stockholm-ai/common"
@@ -241,7 +242,7 @@ func handleStatic(router *mux.Router, dir string) {
 	}
 }
 
-func init() {
+func main() {
 	router := mux.NewRouter()
 	router.Path("/js/{ver}/all.js").HandlerFunc(handler(allJS))
 	router.Path("/css/{ver}/all.css").HandlerFunc(handler(allCSS))
@@ -283,4 +284,5 @@ func init() {
 
 	router.PathPrefix("/").MatcherFunc(wantsHTML).HandlerFunc(handler(index))
 	http.Handle("/", router)
+	appengine.Main()
 }

@@ -1,0 +1,6 @@
+runtime: go111
+main: ./web
+
+handlers:
+    - url: /.*
+      script: auto

@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"github.com/golang/snappy"
+	"golang.org/x/net/context"
 
-	"appengine"
-	"appengine/memcache"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/memcache"
 )
 
 const (
@@ -27,7 +28,7 @@ var snappyGobCodec = memcache.Codec{
 		if err != nil {
 			return
 		}
-		compressed, err = snappy.Encode(nil, uncompressed)
+		compressed = snappy.Encode(nil, uncompressed)
 		return
 	},
 	Unmarshal: func(compressed []byte, i interface{}) (err error) {
@@ -82,31 +83,31 @@ func keyify(k string) string {
 	return string(buf.Bytes())
 }
 
-func MemDel(c appengine.Context, keys ...string) {
+func MemDel(c context.Context, keys ...string) {
 	for index, key := range keys {
 		keys[index] = keyify(key)
 	}
 	memcache.DeleteMulti(c, keys)
 }
 
-func MemGet(c appengine.Context, key string, val interface{}) {
+func MemGet(c context.Context, key string, val interface{}) {
 	if _, err := MemCodec.Get(c, keyify(key), val); err != nil && err != memcache.ErrCacheMiss {
-		c.Errorf("When trying to load %v(%v) => %#v: %#v", key, keyify(key), val, err)
+		log.Errorf(c, "When trying to load %v(%v) => %#v: %#v", key, keyify(key), val, err)
 		panic(err)
 	}
 }
 
-func MemPut(c appengine.Context, key string, val interface{}) {
+func MemPut(c context.Context, key string, val interface{}) {
 	if err := MemCodec.Set(c, &memcache.Item{
 		Key:    keyify(key),
 		Object: val,
 	}); err != nil {
-		c.Errorf("When trying to save %v(%v) => %#v: %#v", key, keyify(key), val, err)
+		log.Errorf(c, "When trying to save %v(%v) => %#v: %#v", key, keyify(key), val, err)
 		panic(err)
 	}
 }
 
-func Memoize2(c appengine.Context, super, key string, destP interface{}, f func() interface{}) (exists bool) {
+func Memoize2(c context.Context, super, key string, destP interface{}, f func() interface{}) (exists bool) {
 	superH := keyify(super)
 	var seed string
 	item, err := memcache.Get(c, superH)
@@ -119,7 +120,7 @@ func Memoize2(c appengine.Context, super, key string, destP interface{}, f func(
 			Key:   superH,
 			Value: []byte(seed),
 		}
-		//c.Infof("Didn't find %v in memcache, reseeding with %v", super, seed)
+		//log.Infof(c, "Didn't find %v in memcache, reseeding with %v", super, seed)
 		if err = memcache.Set(c, item); err != nil {
 			panic(err)
 		}
@@ -137,15 +138,15 @@ func reflectCopy(srcValue reflect.Value, source, destP interface{}) {
 	}
 }
 
-func MemoizeDuring(c appengine.Context, key string, dur time.Duration, cacheNil bool, destP interface{}, f func() interface{}) (exists bool) {
+func MemoizeDuring(c context.Context, key string, dur time.Duration, cacheNil bool, destP interface{}, f func() interface{}) (exists bool) {
 	return memoizeMulti(c, []string{key}, dur, cacheNil, []interface{}{destP}, []func() interface{}{f})[0]
 }
 
-func Memoize(c appengine.Context, key string, destP interface{}, f func() interface{}) (exists bool) {
+func Memoize(c context.Context, key string, destP interface{}, f func() interface{}) (exists bool) {
 	return MemoizeMulti(c, []string{key}, []interface{}{destP}, []func() interface{}{f})[0]
 }
 
-func memGetMulti(c appengine.Context, keys []string, dests []interface{}) (items []*memcache.Item, errors []error) {
+func memGetMulti(c context.Context, keys []string, dests []interface{}) (items []*memcache.Item, errors []error) {
 	items = make([]*memcache.Item, len(keys))
 	errors = make([]error, len(keys))
 
@@ -172,11 +173,11 @@ func memGetMulti(c appengine.Context, keys []string, dests []interface{}) (items
 	return
 }
 
-func MemoizeMulti(c appengine.Context, keys []string, destPs []interface{}, f []func() interface{}) (exists []bool) {
+func MemoizeMulti(c context.Context, keys []string, destPs []interface{}, f []func() interface{}) (exists []bool) {
 	return memoizeMulti(c, keys, 0, true, destPs, f)
 }
 
-func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNil bool, destPs []interface{}, f []func() interface{}) (exists []bool) {
+func memoizeMulti(c context.Context, keys []string, dur time.Duration, cacheNil bool, destPs []interface{}, f []func() interface{}) (exists []bool) {
 	exists = make([]bool, len(keys))
 	keyHashes := make([]string, len(keys))
 	for index, key := range keys {
@@ -186,7 +187,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 	t := time.Now()
 	items, errors := memGetMulti(c, keyHashes, destPs)
 	if d := time.Now().Sub(t); d > time.Millisecond*10 {
-		c.Debugf("SLOW memGetMulti(%v): %v", keys, d)
+		log.Debugf(c, "SLOW memGetMulti(%v): %v", keys, d)
 	}
 
 	done := make(chan bool, len(items))
@@ -199,7 +200,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 		key := keys[index]
 		destP := destPs[index]
 		if err == memcache.ErrCacheMiss {
-			c.Infof("Didn't find %v in memcache, regenerating", key)
+			log.Infof(c, "Didn't find %v in memcache, regenerating", key)
 			go func() {
 				defer func() {
 					done <- true
@@ -215,7 +216,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 							Object:     nilObj,
 							Expiration: dur,
 						}); err != nil {
-							c.Errorf("When trying to save %v(%v) => %#v: %#v", key, keyH, nilObj, err)
+							log.Errorf(c, "When trying to save %v(%v) => %#v: %#v", key, keyH, nilObj, err)
 							panic(err)
 						}
 					}
@@ -226,7 +227,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 						Object:     result,
 						Expiration: dur,
 					}); err != nil {
-						c.Errorf("When trying to save %v(%v) => %#v: %#v", key, keyH, result, err)
+						log.Errorf(c, "When trying to save %v(%v) => %#v: %#v", key, keyH, result, err)
 						panic(err)
 					} else {
 						reflectCopy(resultValue, result, destP)
@@ -235,7 +236,7 @@ func memoizeMulti(c appengine.Context, keys []string, dur time.Duration, cacheNi
 				}
 			}()
 		} else if err != nil {
-			c.Errorf("When trying to get %v(%v): %#v", key, keyH, err)
+			log.Errorf(c, "When trying to get %v(%v): %#v", key, keyH, err)
 			panic(err)
 		} else {
 			if item.Flags&nilCache == nilCache {
